@@ -1,0 +1,28 @@
+{
+  "name": "moi-raskhody",
+  "productName": "Мои ежемесячные расходы",
+  "version": "1.0.0",
+  "description": "Семейный бюджет, тарифы ЖКУ Улан-Удэ и льготы",
+  "main": "main.js",
+  "author": "Мои расходы",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable nsis",
+    "build:mac": "electron-builder --mac dmg",
+    "build:all": "electron-builder --win --mac"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "ru.moi.raskhody",
+    "productName": "Мои ежемесячные расходы",
+    "files": ["index.html", "main.js", "icon.png", "package.json"],
+    "directories": { "output": "dist" },
+    "win": { "icon": "icon.png", "target": ["portable", "nsis"] },
+    "mac": { "icon": "icon.png", "category": "public.app-category.finance", "target": ["dmg"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}

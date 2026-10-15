@@ -342,6 +342,15 @@ tr.cur td{background:var(--surface2)}
         <div class="field"><label for="e_util_fact">Общая сумма без разбивки, ₽</label><input class="p m" id="e_util_fact" type="number" inputmode="decimal" min="0" step="any" value="" placeholder="0"></div>
       </div>
       <p class="small" id="fact-cmp" style="margin-top:10px"></p>
+      <h3 style="margin:16px 0 4px">Сальдо по услугам внутри поставщиков</h3>
+      <p class="muted small">Из лицевых счетов ЕИРЦ на 14.10.2026: начисления октября на тот момент ещё 0,00, значит это остаток за прошлый месяц. Суммы по услугам нужны, чтобы по тарифам восстановить реальный объём потребления.</p>
+      <div class="fgrid">
+        <div class="field"><label for="s_cold">Водоснабжение (холодная вода), ₽</label><input class="p m" id="s_cold" type="number" inputmode="decimal" min="0" step="any" value="188.11" placeholder="0"></div>
+        <div class="field"><label for="s_sew">Водоотведение, ₽</label><input class="p m" id="s_sew" type="number" inputmode="decimal" min="0" step="any" value="495.29" placeholder="0"></div>
+        <div class="field"><label for="s_heat">Отопление (ТГК-14), ₽</label><input class="p m" id="s_heat" type="number" inputmode="decimal" min="0" step="any" value="2863.06" placeholder="0"></div>
+        <div class="field"><label for="s_hot">Горячая вода (ТГК-14), ₽</label><input class="p m" id="s_hot" type="number" inputmode="decimal" min="0" step="any" value="1149.22" placeholder="0"></div>
+      </div>
+      <div id="svc-cmp" style="margin-top:10px"></div>
     </div>
     <div class="box">
       <h2>Мои параметры</h2>
@@ -546,8 +555,9 @@ $('t-edit').innerHTML=te;
 
 /* ---------- месяцы и сохранение ---------- */
 var FIDS=['f_tgk','f_vod','f_el','f_zhks','f_dom','f_kap','f_eko'];
-var FACT={};FIDS.concat(['e_util_fact','i_cash','i_vac','i_mat']).forEach(function(id){FACT[id]=1});
-var MF={};['i_me','i_sp','i_oth','i_cash','i_vac','i_mat','u_cold','u_hot','u_kwh','u_norm','e_util_fact'].concat(FIDS).concat(EXP.map(function(e){return 'e_'+e[0]})).forEach(function(id){MF[id]=1});
+var SIDS=['s_cold','s_sew','s_heat','s_hot'];
+var FACT={};FIDS.concat(SIDS).concat(['e_util_fact','i_cash','i_vac','i_mat']).forEach(function(id){FACT[id]=1});
+var MF={};['i_me','i_sp','i_oth','i_cash','i_vac','i_mat','u_cold','u_hot','u_kwh','u_norm','e_util_fact'].concat(FIDS).concat(SIDS).concat(EXP.map(function(e){return 'e_'+e[0]})).forEach(function(id){MF[id]=1});
 EXP.forEach(function(e){$('e_'+e[0]).classList.add('m')});
 var DEFV={};Object.keys(MF).forEach(function(id){DEFV[id]=$(id).defaultValue});
 /* суммы из личного кабинета на 14.10.2026 относятся к октябрю 2026, в другие месяцы они не переносятся */
@@ -1020,6 +1030,41 @@ function applyUtilPhoto(){
   if(any){syncCur();MON[CUR]._t=1;save();renderMonths(false);update()}
   IMP={msg:any?'Суммы ЖКХ внесены в «'+mname(CUR)+'». Они заменили расчёт по тарифам.':'Не удалось сопоставить поставщиков.',cls:any?'good':'warn'};renderImp();
 }
+/* ---------- сверка по услугам: объёмы из сумм ---------- */
+function svcRows(){
+  var ppl=Math.max(1,num('u_people')),area=Math.max(1,num('u_area')),hk=$('u_hottype').value==='open'?'hotO':'hotC';
+  return [
+    {n:'Холодная вода',a:num('s_cold'),tk:'cold',u:'м³',f:'u_cold',div:ppl,cur:num('u_cold')*ppl},
+    {n:'Горячая вода',a:num('s_hot'),tk:hk,u:'м³',f:'u_hot',div:ppl,cur:num('u_hot')*ppl},
+    {n:'Водоотведение',a:num('s_sew'),tk:'sewer',u:'м³',f:null},
+    {n:'Отопление',a:num('s_heat'),tk:'heat',u:'Гкал',f:'u_norm',div:area,cur:num('u_norm')*area},
+    {n:'Электроэнергия (Читаэнергосбыт)',a:num('f_el'),tk:'el',u:'кВт·ч',f:'u_kwh',div:1,cur:num('u_kwh')}
+  ].map(function(r){var t=tv(r.tk,0);r.t=t;r.vol=r.a>0&&t>0?r.a/t:0;return r});
+}
+function nf(x,d){return x.toLocaleString('ru-RU',{maximumFractionDigits:d===undefined?2:d})}
+function renderSvc(){
+  var el=$('svc-cmp');if(!el)return;
+  var R=svcRows(),any=R.some(function(r){return r.vol>0});
+  if(!any){el.innerHTML='<p class="small muted">Впишите суммы по услугам выше, и здесь появится объём, который за ними стоит.</p>';return}
+  var h='<p class="small"><b>Какой объём стоит за этими суммами.</b> Сумма делится на тариф периода '+(typeof lab==='function'?lab().s0:'до 1 октября 2026')+' (остаток относится к прошлому месяцу).</p><div class="elist">';
+  R.forEach(function(r){
+    if(!(r.vol>0))return;
+    h+='<div class="er"><span class="n">'+r.n+'</span><span class="v">≈ '+nf(r.vol,r.u==='Гкал'?3:1)+' '+r.u+'</span><span class="t">'+rub(r.a)+' ÷ '+nf(r.t,2)+' ₽'+(r.cur>0?'. Сейчас в «Мои параметры»: '+nf(r.cur,r.u==='Гкал'?3:1)+' '+r.u+' в месяц':'')+'</span></div>';
+  });
+  h+='</div>';
+  var c=R[0].vol+R[1].vol;
+  if(R[2].vol>0&&c>0){var df=Math.abs(R[2].vol-c)/R[2].vol;h+='<p class="small '+(df<0.12?'good':'warn')+'" style="margin-top:6px">Проверка: водоотведение '+nf(R[2].vol,1)+' м³, холодная + горячая вода '+nf(c,1)+' м³. '+(df<0.12?'Объёмы сходятся, данные согласованы.':'Расхождение заметное: возможно, часть сумм относится к разным месяцам.')+'</p>'}
+  h+='<div class="hrow" style="justify-content:flex-start;gap:8px;margin-top:10px"><button type="button" class="pill main" data-svc="1">Подставить эти объёмы в «Мои параметры»</button></div>';
+  el.innerHTML=h;
+}
+function applySvc(){
+  var any=0;
+  svcRows().forEach(function(r){
+    if(!r.f||!(r.vol>0))return;
+    var v=r.vol/r.div;$(r.f).value=String(r.f==='u_norm'?Math.round(v*1e5)/1e5:Math.round(v*100)/100);any++;
+  });
+  if(any){syncCur();MON[CUR]._t=1;save();renderMonths(false);update()}
+}
 /* ---------- скриншоты ЕИРЦ: суммы и показатели ---------- */
 var EIRC=null;
 function renderEirc(){
@@ -1030,6 +1075,7 @@ function renderEirc(){
   var h='<p class="small"><b>Распознано за '+mname(EIRC.k).toLowerCase()+'.</b> Проверьте и при необходимости поправьте значения: распознавание может ошибаться. После нажатия «Внести» они запишутся в этот месяц.</p>';
   h+='<div class="elist">';
   EIRC.rows.forEach(function(x,i){h+='<div class="er"><span class="n">'+esc(x.name)+'</span><span class="v"><input type="number" step="any" min="0" data-ev="r:'+i+'" value="'+r2(x.amt)+'" aria-label="Сумма: '+esc(x.name)+'"> ₽</span><span class="t">'+(x.id?'→ '+x.label:'<span class="st-warn">не сопоставлено, не будет внесено</span>')+'</span></div>'});
+  (EIRC.svc||[]).forEach(function(x,i){h+='<div class="er"><span class="n">'+SVN[x.key][0]+', сальдо по услуге</span><span class="v"><input type="number" step="any" min="0" data-ev="s:'+i+'" value="'+r2(x.amt)+'" aria-label="Сумма: '+SVN[x.key][0]+'"> ₽</span><span class="t">→ «Сальдо по услугам внутри поставщиков»</span></div>'});
   EIRC.met.forEach(function(m,i){h+='<div class="er"><span class="n">'+m.label+', объём за месяц</span><span class="v"><input type="number" step="any" min="0" data-ev="m:'+i+'" value="'+m.vol+'" aria-label="Объём: '+m.label+'"> '+m.unit+'</span><span class="t">→ '+m.to+'</span></div>'});
   h+='</div>';
   if(EIRC.debt.length)h+='<p class="small muted" style="margin-top:8px">В скриншотах есть задолженность: '+EIRC.debt.map(function(d){return esc(d.name)+' '+rub(d.amount)}).join(', ')+'. Она в бюджет не вносится.</p>';
@@ -1038,6 +1084,7 @@ function renderEirc(){
   b.innerHTML=h;
 }
 var EMET={cold:['Холодная вода','м³','«Холодная вода, м³ на человека»'],hot:['Горячая вода','м³','«Горячая вода, м³ на человека»'],electric:['Электроэнергия','кВт·ч','«Электроэнергия, кВт·ч в месяц»'],heat:['Отопление','Гкал','«Отопление, Гкал на м²»']};
+var SVN={cold:['Водоснабжение (холодная вода)','s_cold'],sewer:['Водоотведение','s_sew'],heat:['Отопление','s_heat'],hot:['Горячая вода','s_hot']};
 var EFLD={cold:'u_cold',hot:'u_hot',electric:'u_kwh',heat:'u_norm'};
 function handleEirc(files){
   files=[].slice.call(files).slice(0,6);
@@ -1047,7 +1094,7 @@ function handleEirc(files){
     S=s;if(!S)throw {code:'unavailable'};
     return Promise.all(files.map(shrink));
   }).then(function(blobs){
-    var prompt='Ты помогаешь вести семейный бюджет. На изображениях скриншоты личного кабинета ЕИРЦ или квитанции за жилищно-коммунальные услуги в Республике Бурятия, это один или несколько экранов. Верни только JSON без пояснений такого вида: {"period":"ММ.ГГГГ" или null,"providers":[{"name":"название поставщика или услуги","amount":число}],"meters":[{"service":"cold"|"hot"|"electric"|"heat","volume":число,"unit":"м³"|"кВт·ч"|"Гкал"}],"debt":[{"name":"поставщик","amount":число}],"note":"коротко, что не удалось разобрать"}. Поставщики в Бурятии: ТГК-14, Водоканал, Читаэнергосбыт, ЖКС Саяны, Дом плюс, Фонд капитального ремонта, ЭкоАльянс. В amount ставь сумму, начисленную за расчётный месяц (если её нет, то к оплате за месяц), без долга и пени. Если на экране только «Текущее сальдо» по лицевым счетам, то отрицательное сальдо означает сумму к оплате: берёшь его модуль, а положительное сальдо означает переплату, такой счёт пропусти. Задолженность перечисли отдельно в debt, переплату не указывай. В meters укажи объём потребления за месяц (не показания счётчика), если он есть на экране. Если экраны относятся к одному месяцу, объедини данные. Числа без пробелов и знака валюты.';
+    var prompt='Ты помогаешь вести семейный бюджет. На изображениях скриншоты личного кабинета ЕИРЦ или квитанции за жилищно-коммунальные услуги в Республике Бурятия, это один или несколько экранов. Верни только JSON без пояснений такого вида: {"period":"ММ.ГГГГ" или null,"providers":[{"name":"название поставщика или услуги","amount":число}],"services":[{"service":"cold"|"sewer"|"heat"|"hot","amount":число}],"meters":[{"service":"cold"|"hot"|"electric"|"heat","volume":число,"unit":"м³"|"кВт·ч"|"Гкал"}],"debt":[{"name":"поставщик","amount":число}],"note":"коротко, что не удалось разобрать"}. Поставщики в Бурятии: ТГК-14, Водоканал, Читаэнергосбыт, ЖКС Саяны, Дом плюс, Фонд капитального ремонта, ЭкоАльянс. В amount ставь сумму, начисленную за расчётный месяц (если её нет, то к оплате за месяц), без долга и пени. Если на экране только «Текущее сальдо» по лицевым счетам, то отрицательное сальдо означает сумму к оплате: берёшь его модуль, а положительное сальдо означает переплату, такой счёт пропусти. Задолженность перечисли отдельно в debt, переплату не указывай. В meters укажи объём потребления за месяц (не показания счётчика), если он есть на экране. Если экраны относятся к одному месяцу, объедини данные. Если экран показывает один лицевой счёт, поставщика бери из заголовка, а сумму из строки «Итого на ДАТА» (модуль числа). В services внеси суммы по отдельным услугам внутри счёта по строке «Итого на конец месяца» (модуль числа): Водоснабжение это cold, Водоотведение sewer, Отопление heat, Горячая вода hot. Числа без пробелов и знака валюты.';
     return S.json(prompt,{images:blobs,cache:false});
   }).then(function(r){
     if(!r||typeof r!=='object')throw {code:'bad'};
@@ -1060,11 +1107,12 @@ function handleEirc(files){
     });
     var met=[];
     (r.meters||[]).forEach(function(m){var d=EMET[m.service],v=Math.abs(+m.volume||0);if(d&&v>0)met.push({key:m.service,label:d[0],unit:d[1],to:d[2],vol:v})});
-    if(!rows.length&&!met.length)throw {code:'empty',note:r.note};
     var pm=/^(\d\d)\.(\d{4})$/.exec(r.period||''),k=pm?pm[2]+'-'+pm[1]:CUR;
     var note=r.note||'';
     if(k<START||k>LAST){note=(note?note+' ':'')+'Месяц '+mname(k)+' вне списка вкладок, данные пойдут в '+mname(CUR)+'.';k=CUR}
-    EIRC={k:k,rows:rows,met:met,debt:(r.debt||[]).filter(function(d){return +d.amount>0}).map(function(d){return {name:d.name||'',amount:+d.amount}}),note:note};
+    var svc=[];(r.services||[]).forEach(function(x){var a=Math.abs(+x.amount||0);if(a>0&&SVN[x.service])svc.push({key:x.service,amt:a})});
+    if(!rows.length&&!met.length&&!svc.length)throw {code:'empty',note:r.note};
+    EIRC={k:k,rows:rows,met:met,svc:svc,debt:(r.debt||[]).filter(function(d){return +d.amount>0}).map(function(d){return {name:d.name||'',amount:+d.amount}}),note:note};
     renderEirc();
   }).catch(function(e){
     EIRC={msg:e&&e.code==='unavailable'?'Распознавание недоступно в этом окне.':e&&e.code==='empty'?'Суммы и показатели не найдены. '+(e.note||'Попробуйте скриншот целиком, чтобы были видны названия поставщиков и суммы.'):'Не получилось распознать ('+((e&&e.code)||'ошибка')+'). Попробуйте ещё раз.',cls:'warn'};renderEirc();
@@ -1074,6 +1122,7 @@ function applyEirc(){
   var k=EIRC.k;if(k!==CUR)openMonth(k);
   var any=0,people=Math.max(1,num('u_people')),area=Math.max(1,num('u_area'));
   EIRC.rows.forEach(function(x){if(x.id&&x.amt>0){$(x.id).value=String(r2(x.amt));any++}});
+  (EIRC.svc||[]).forEach(function(x){if(x.amt>0){$(SVN[x.key][1]).value=String(r2(x.amt));any++}});
   EIRC.met.forEach(function(m){
     if(!(m.vol>0))return;
     var v=m.key==='cold'||m.key==='hot'?m.vol/people:m.key==='heat'?m.vol/area:m.vol;
@@ -1085,7 +1134,7 @@ function applyEirc(){
 document.addEventListener('input',function(e){
   var d=e.target.dataset&&e.target.dataset.ev;if(!d||!EIRC||!EIRC.rows)return;
   var p=d.split(':'),v=+e.target.value;if(!isFinite(v))return;
-  if(p[0]==='r')EIRC.rows[+p[1]].amt=v;else EIRC.met[+p[1]].vol=v;
+  if(p[0]==='r')EIRC.rows[+p[1]].amt=v;else if(p[0]==='s')EIRC.svc[+p[1]].amt=v;else EIRC.met[+p[1]].vol=v;
 });
 (function(){
   var f=document.createElement('input');f.type='file';f.accept='image/*';f.multiple=true;f.id='eirc-file';f.hidden=true;document.body.appendChild(f);
@@ -1128,7 +1177,7 @@ function rebuildCats(){
   Object.keys(CATS).forEach(function(id){var c=CATS[id];if(c.sec==='inc'){INC.push(id);ih+=incField(id,esc(c.label))}});
   $('inc-extra').innerHTML=ih?'<div class="fgrid" style="grid-template-columns:1fr;margin-top:10px">'+ih+'</div>':'';
   Object.keys(MF).forEach(function(k){delete MF[k]});
-  ['u_cold','u_hot','u_kwh','u_norm','e_util_fact'].concat(FIDS).concat(INC).concat(EXP.map(function(e){return 'e_'+e[0]})).forEach(function(id){MF[id]=1;if(DEFV[id]===undefined)DEFV[id]='0'});
+  ['u_cold','u_hot','u_kwh','u_norm','e_util_fact'].concat(FIDS).concat(SIDS).concat(INC).concat(EXP.map(function(e){return 'e_'+e[0]})).forEach(function(id){MF[id]=1;if(DEFV[id]===undefined)DEFV[id]='0'});
 }
 function renderAddForms(){
   var PH={main:'Новая категория расходов, например Спорт',mp:'Новая площадка, например Lamoda',w:'Новая категория, например Маникюр',inc:'Новый вид дохода, например Аренда'};
@@ -1255,7 +1304,7 @@ function resetMonth(btn){
   }
   syncCur();
   var m=MON[CUR];
-  EXP.map(function(e){return 'e_'+e[0]}).concat(INC).concat(FIDS).concat(['e_util_fact']).forEach(function(id){m[id]=FACT[id]?'':'0'});
+  EXP.map(function(e){return 'e_'+e[0]}).concat(INC).concat(FIDS).concat(SIDS).concat(['e_util_fact']).forEach(function(id){m[id]=FACT[id]?'':'0'});
   delete m.ent;delete m.paid;m._t=0;
   var mk=CUR.slice(5)+'.'+CUR.slice(0,4);
   IMPK=IMPK.filter(function(k){return k.slice(3,10)!==mk});
@@ -1550,6 +1599,7 @@ function update(){
   renderMortgage(B);
   renderCards(B,U);
   renderSummary();
+  renderSvc();
   var ae=document.activeElement;
   if(!(ae&&ae.closest&&ae.closest('#pay-list')))renderPays();
   dailyUpdate();
@@ -1613,6 +1663,7 @@ document.addEventListener('click',function(e){
   if(t.dataset.uok){applyUtilPhoto()}
   if(t.dataset.eirc){$('eirc-file').click()}
   if(t.dataset.eok){applyEirc()}
+  if(t.dataset.svc){applySvc()}
   if(t.dataset.ecancel){EIRC=null;renderEirc()}
   if(t.dataset.icancel){IMP=null;renderImp()}
   if(t.dataset.padd){

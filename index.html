@@ -122,6 +122,11 @@ input,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid 
 .st-ok{color:var(--good)}.st-warn{color:var(--warn)}.st-bad{color:var(--bad)}
 .cdel{flex:0 0 auto;border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px;border-radius:6px;cursor:pointer}
 .cdel:hover{color:var(--bad)}
+.it input{width:96px;padding:4px 6px;font-size:13px}
+.elist .er{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.elist .er .v{white-space:nowrap;font-size:13px}
+.elist .er input{width:92px;padding:4px 6px;font-size:13px}
+.elist .er .t{grid-column:1/-1;font-size:12px;color:var(--muted)}
 .cprev{flex:0 0 auto;border:0;background:none;color:var(--accent);font-size:16px;line-height:1;padding:2px 5px;border-radius:6px;cursor:pointer}
 .cprev:hover{background:var(--accent-soft)}.cprev:disabled{opacity:.35;cursor:default}
 .mtools{display:flex;gap:8px;flex-wrap:wrap}
@@ -317,6 +322,12 @@ tr.cur td{background:var(--surface2)}
   <!-- ЖКУ -->
   <section id="p-u" role="tabpanel" aria-labelledby="tab-u" class="sect" hidden>
     <div class="sv"><button type="button" class="pill main" data-save="1">Сохранить изменения</button><span class="sst small muted" aria-live="polite">Сохраняется на этом устройстве</span><button type="button" class="pill sx" data-exp="1" hidden>Скачать копию</button><button type="button" class="pill sx" data-imp="1" hidden>Загрузить копию</button></div>
+    <div class="box" id="eirc-card">
+      <h2>Скриншоты из ЕИРЦ</h2>
+      <p class="muted small" id="eirc-note">Загрузка скриншотов работает в версии внутри Claude. Здесь вносите суммы и показатели вручную в блоках ниже.</p>
+      <div class="hrow" style="justify-content:flex-start;gap:8px"><button type="button" class="pill main" data-eirc="1" id="btn-eirc" hidden>Добавить скриншоты ЕИРЦ</button></div>
+      <div id="eirc-box" style="margin-top:10px" hidden></div>
+    </div>
     <div class="box">
       <h2>Квитанции по поставщикам</h2>
       <p class="muted small" id="fact-hint">Впишите суммы к оплате по каждому поставщику (как в личном кабинете). Их сумма заменит расчёт по тарифам в бюджете этого месяца. Если разбивки нет, внесите общую сумму в последнее поле. Оставьте всё пустым, чтобы считать по тарифам.</p>
@@ -765,7 +776,7 @@ function onCloudDoc(snap){
 function showExport(){document.querySelectorAll('.sx').forEach(function(e){e.hidden=false});setSt('Сохраняется на этом устройстве. Между устройствами переносите данные кнопками «Скачать копию» и «Загрузить копию».','muted')}
 function initCloud(){
   if(!(window.claude&&claude.use)){showExport();return}
-  claude.use('sample').then(function(sm){if(sm)$('btn-photo').hidden=false}).catch(function(){});
+  claude.use('sample').then(function(sm){if(sm){$('btn-photo').hidden=false;$('btn-eirc').hidden=false;$('eirc-note').textContent='Откройте личный кабинет ЕИРЦ, сделайте скриншоты с начислениями и показателями (можно до 6 штук) и добавьте их. Я распознаю суммы по поставщикам и расход воды, электричества и отопления, а вы проверите и внесёте их в выбранный месяц.'}}).catch(function(){});
   Promise.all([claude.use('user'),claude.use('db')]).then(function(r){
     var u=r[0],db=r[1];
     if(!u||!db){showExport();return}
@@ -1009,6 +1020,77 @@ function applyUtilPhoto(){
   if(any){syncCur();MON[CUR]._t=1;save();renderMonths(false);update()}
   IMP={msg:any?'Суммы ЖКХ внесены в «'+mname(CUR)+'». Они заменили расчёт по тарифам.':'Не удалось сопоставить поставщиков.',cls:any?'good':'warn'};renderImp();
 }
+/* ---------- скриншоты ЕИРЦ: суммы и показатели ---------- */
+var EIRC=null;
+function renderEirc(){
+  var b=$('eirc-box');
+  if(!EIRC){b.hidden=true;b.innerHTML='';return}
+  b.hidden=false;
+  if(EIRC.msg){b.innerHTML='<p class="small '+(EIRC.cls||'muted')+'">'+EIRC.msg+'</p>';return}
+  var h='<p class="small"><b>Распознано за '+mname(EIRC.k).toLowerCase()+'.</b> Проверьте и при необходимости поправьте значения: распознавание может ошибаться. После нажатия «Внести» они запишутся в этот месяц.</p>';
+  h+='<div class="elist">';
+  EIRC.rows.forEach(function(x,i){h+='<div class="er"><span class="n">'+esc(x.name)+'</span><span class="v"><input type="number" step="any" min="0" data-ev="r:'+i+'" value="'+r2(x.amt)+'" aria-label="Сумма: '+esc(x.name)+'"> ₽</span><span class="t">'+(x.id?'→ '+x.label:'<span class="st-warn">не сопоставлено, не будет внесено</span>')+'</span></div>'});
+  EIRC.met.forEach(function(m,i){h+='<div class="er"><span class="n">'+m.label+', объём за месяц</span><span class="v"><input type="number" step="any" min="0" data-ev="m:'+i+'" value="'+m.vol+'" aria-label="Объём: '+m.label+'"> '+m.unit+'</span><span class="t">→ '+m.to+'</span></div>'});
+  h+='</div>';
+  if(EIRC.debt.length)h+='<p class="small muted" style="margin-top:8px">В скриншотах есть задолженность: '+EIRC.debt.map(function(d){return esc(d.name)+' '+rub(d.amount)}).join(', ')+'. Она в бюджет не вносится.</p>';
+  if(EIRC.note)h+='<p class="small muted">'+esc(EIRC.note)+'</p>';
+  h+='<div class="hrow" style="justify-content:flex-start;gap:8px;margin-top:10px"><button type="button" class="pill main" data-eok="1">Внести в ЖКУ</button><button type="button" class="pill" data-ecancel="1">Отмена</button></div>';
+  b.innerHTML=h;
+}
+var EMET={cold:['Холодная вода','м³','«Холодная вода, м³ на человека»'],hot:['Горячая вода','м³','«Горячая вода, м³ на человека»'],electric:['Электроэнергия','кВт·ч','«Электроэнергия, кВт·ч в месяц»'],heat:['Отопление','Гкал','«Отопление, Гкал на м²»']};
+var EFLD={cold:'u_cold',hot:'u_hot',electric:'u_kwh',heat:'u_norm'};
+function handleEirc(files){
+  files=[].slice.call(files).slice(0,6);
+  EIRC={msg:'Распознаю '+files.length+' '+(files.length===1?'скриншот':'скриншота')+', это занимает до минуты…'};renderEirc();
+  var S=null;
+  claude.use('sample').then(function(s){
+    S=s;if(!S)throw {code:'unavailable'};
+    return Promise.all(files.map(shrink));
+  }).then(function(blobs){
+    var prompt='Ты помогаешь вести семейный бюджет. На изображениях скриншоты личного кабинета ЕИРЦ или квитанции за жилищно-коммунальные услуги в Республике Бурятия, это один или несколько экранов. Верни только JSON без пояснений такого вида: {"period":"ММ.ГГГГ" или null,"providers":[{"name":"название поставщика или услуги","amount":число}],"meters":[{"service":"cold"|"hot"|"electric"|"heat","volume":число,"unit":"м³"|"кВт·ч"|"Гкал"}],"debt":[{"name":"поставщик","amount":число}],"note":"коротко, что не удалось разобрать"}. Поставщики в Бурятии: ТГК-14, Водоканал, Читаэнергосбыт, ЖКС Саяны, Дом плюс, Фонд капитального ремонта, ЭкоАльянс. В amount ставь сумму, начисленную за расчётный месяц (если её нет, то к оплате за месяц), без долга и пени. Если на экране только «Текущее сальдо» по лицевым счетам, то отрицательное сальдо означает сумму к оплате: берёшь его модуль, а положительное сальдо означает переплату, такой счёт пропусти. Задолженность перечисли отдельно в debt, переплату не указывай. В meters укажи объём потребления за месяц (не показания счётчика), если он есть на экране. Если экраны относятся к одному месяцу, объедини данные. Числа без пробелов и знака валюты.';
+    return S.json(prompt,{images:blobs,cache:false});
+  }).then(function(r){
+    if(!r||typeof r!=='object')throw {code:'bad'};
+    var rows=[],byId={};
+    (r.providers||[]).forEach(function(p){
+      var amt=Math.abs(+p.amount||0);if(!amt)return;
+      var hit=null;PROV.forEach(function(x){if(!hit&&x[0].test(p.name||''))hit=x});
+      if(hit&&byId[hit[1]]){byId[hit[1]].amt+=amt;return}
+      var row={name:p.name||'Без названия',amt:amt,id:hit&&hit[1],label:hit&&hit[2]};rows.push(row);if(hit)byId[hit[1]]=row;
+    });
+    var met=[];
+    (r.meters||[]).forEach(function(m){var d=EMET[m.service],v=Math.abs(+m.volume||0);if(d&&v>0)met.push({key:m.service,label:d[0],unit:d[1],to:d[2],vol:v})});
+    if(!rows.length&&!met.length)throw {code:'empty',note:r.note};
+    var pm=/^(\d\d)\.(\d{4})$/.exec(r.period||''),k=pm?pm[2]+'-'+pm[1]:CUR;
+    var note=r.note||'';
+    if(k<START||k>LAST){note=(note?note+' ':'')+'Месяц '+mname(k)+' вне списка вкладок, данные пойдут в '+mname(CUR)+'.';k=CUR}
+    EIRC={k:k,rows:rows,met:met,debt:(r.debt||[]).filter(function(d){return +d.amount>0}).map(function(d){return {name:d.name||'',amount:+d.amount}}),note:note};
+    renderEirc();
+  }).catch(function(e){
+    EIRC={msg:e&&e.code==='unavailable'?'Распознавание недоступно в этом окне.':e&&e.code==='empty'?'Суммы и показатели не найдены. '+(e.note||'Попробуйте скриншот целиком, чтобы были видны названия поставщиков и суммы.'):'Не получилось распознать ('+((e&&e.code)||'ошибка')+'). Попробуйте ещё раз.',cls:'warn'};renderEirc();
+  });
+}
+function applyEirc(){
+  var k=EIRC.k;if(k!==CUR)openMonth(k);
+  var any=0,people=Math.max(1,num('u_people')),area=Math.max(1,num('u_area'));
+  EIRC.rows.forEach(function(x){if(x.id&&x.amt>0){$(x.id).value=String(r2(x.amt));any++}});
+  EIRC.met.forEach(function(m){
+    if(!(m.vol>0))return;
+    var v=m.key==='cold'||m.key==='hot'?m.vol/people:m.key==='heat'?m.vol/area:m.vol;
+    $(EFLD[m.key]).value=String(m.key==='heat'?Math.round(v*1e5)/1e5:r2(v));any++;
+  });
+  if(any){syncCur();MON[CUR]._t=1;save();renderMonths(false);update()}
+  EIRC={msg:any?'Внесено в «'+mname(CUR)+'»: суммы по поставщикам и расход воды, электричества и отопления. Расчёт и сравнение на этой вкладке обновились.':'Ничего не удалось внести.',cls:any?'good':'warn'};renderEirc();
+}
+document.addEventListener('input',function(e){
+  var d=e.target.dataset&&e.target.dataset.ev;if(!d||!EIRC||!EIRC.rows)return;
+  var p=d.split(':'),v=+e.target.value;if(!isFinite(v))return;
+  if(p[0]==='r')EIRC.rows[+p[1]].amt=v;else EIRC.met[+p[1]].vol=v;
+});
+(function(){
+  var f=document.createElement('input');f.type='file';f.accept='image/*';f.multiple=true;f.id='eirc-file';f.hidden=true;document.body.appendChild(f);
+  f.addEventListener('change',function(){if(f.files.length)handleEirc(f.files);f.value=''});
+})();
 (function(){
   function mk(id,acc,cap){var f=document.createElement('input');f.type='file';f.accept=acc;if(cap)f.setAttribute('capture','environment');f.id=id;f.hidden=true;document.body.appendChild(f);return f}
   var fc=mk('csv-file','.csv,text/csv,text/plain'),fp=mk('photo-file','image/*',true);
@@ -1529,6 +1611,9 @@ document.addEventListener('click',function(e){
   if(t.dataset.photo){$('photo-file').click()}
   if(t.dataset.iok){confirmImp()}
   if(t.dataset.uok){applyUtilPhoto()}
+  if(t.dataset.eirc){$('eirc-file').click()}
+  if(t.dataset.eok){applyEirc()}
+  if(t.dataset.ecancel){EIRC=null;renderEirc()}
   if(t.dataset.icancel){IMP=null;renderImp()}
   if(t.dataset.padd){
     var nm=($('pay-new-name').value||'').trim(),dy=$('pay-new-day').value;

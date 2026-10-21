@@ -1,0 +1,2129 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Мои ежемесячные расходы</title>
+<meta name="description" content="Семейный бюджет, тарифы ЖКУ Улан-Удэ и льготы для семьи в Бурятии">
+<meta name="theme-color" content="#F2F2F7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Расходы">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<style>
+/* Layout: плотный рабочий лист. Сверху итоги и выбор тарифного периода, ниже три вкладки: бюджет, ЖКУ, льготы. */
+:root{
+  --bg:#F2F5F7; --surface:#FFFFFF; --surface2:#E8EEF2; --fg:#13222D; --muted:#566874; --line:#D3DCE3;
+  --accent:#1D5C8F; --accent-ink:#FFFFFF; --accent-soft:#DCE9F4;
+  --good:#1F7A4D; --good-soft:#DDF0E5; --warn:#9A5207; --warn-soft:#FBE9D3; --bad:#B3261E; --bad-soft:#F9DEDC;
+  --display:'Unbounded','Arial Narrow',system-ui,sans-serif;
+  --body:'Golos Text',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1A23; --surface:#15252F; --surface2:#1C303C; --fg:#E6EEF3; --muted:#93A6B3; --line:#2A404D;
+    --accent:#6FB0E6; --accent-ink:#0B1A24; --accent-soft:#1B3445;
+    --good:#5FD08F; --good-soft:#173528; --warn:#F0A559; --warn-soft:#3A2A14; --bad:#F2877F; --bad-soft:#40201E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1A23; --surface:#15252F; --surface2:#1C303C; --fg:#E6EEF3; --muted:#93A6B3; --line:#2A404D;
+  --accent:#6FB0E6; --accent-ink:#0B1A24; --accent-soft:#1B3445;
+  --good:#5FD08F; --good-soft:#173528; --warn:#F0A559; --warn-soft:#3A2A14; --bad:#F2877F; --bad-soft:#40201E;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
+.wrap{max-width:1080px;margin:0 auto;padding-block:22px 56px;display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(20px,4.6vw,30px);line-height:1.15;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:500;font-size:16px;margin:0 0 4px;text-wrap:balance}
+h3{font-size:15px;margin:0;font-weight:600;text-wrap:balance}
+p{margin:0}
+.sub{color:var(--muted);margin-top:6px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+a{color:var(--accent)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:820px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media(max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .l{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-weight:500;font-size:clamp(16px,3.4vw,21px);margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi .d{font-size:12px;color:var(--muted);margin-top:2px}
+.kpi .kmini{font-size:11px;color:var(--muted);margin-top:6px;padding-top:5px;border-top:1px dashed var(--line)}
+.kpi .kmini b{font-weight:600}
+.kpi .kmini .bad{color:var(--bad,#b3261e)}
+.kpi .kmini .good{color:var(--good,#2e7d32)}
+.good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+.seg{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.seg .cap{font-size:13px;color:var(--muted);margin-right:4px}
+button{font:inherit;color:inherit;cursor:pointer}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px}
+.pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font-weight:500;color:var(--muted);white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{background:var(--warn-soft);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--fg)}
+.note.info{background:var(--accent-soft)}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;color:var(--muted)}
+input,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:10px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 124px 48px;gap:4px 10px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .pc{text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.row .bar{grid-column:1/-1;height:4px;border-radius:2px;background:var(--surface2);overflow:hidden}
+.row .bar i{display:block;height:100%;background:var(--accent);width:0}
+.row.auto input{background:var(--surface2);border-style:dashed}
+.sect{display:flex;flex-direction:column;gap:8px}
+.gauge{display:flex;flex-direction:column;gap:3px;margin-top:10px}
+.gauge .t{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.gauge .b{position:relative;height:10px;border-radius:5px;background:var(--surface2)}
+.gauge .b i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--accent)}
+.gauge .b u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg);text-decoration:none}
+.lb{display:flex;align-items:center;gap:8px;min-width:0}
+.lb label{min-width:0}
+.calc{flex:0 0 auto;border:1px solid var(--line);background:var(--surface2);border-radius:8px;min-width:32px;height:30px;padding:0 6px;font-size:14px;line-height:1;color:var(--accent);cursor:pointer}
+.calc[aria-expanded="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink,#fff)}
+.row input[readonly]:not(#e_util){background:var(--surface2)}
+.ent{grid-column:1/-1;background:var(--surface2);border-radius:10px;padding:10px}
+.ent .ents{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.ent .ch{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px}
+.ent .ch button{border:0;background:none;color:var(--muted);font-size:16px;line-height:1;padding:2px 6px;cursor:pointer}
+.ent .addr{display:flex;gap:6px}
+.ent .addr input{flex:1;min-width:0}
+.ent .tot{margin-top:8px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.sv{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}
+.sv .sst{flex:1 1 200px;min-width:0}
+.sv .pill.main{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent);font-weight:600}
+.sv .sx[hidden]{display:none}
+.it{width:100%;border-collapse:collapse;font-size:13px}
+.it td{padding:6px 4px;border-top:1px solid var(--line);vertical-align:middle}
+.it select{max-width:150px;font-size:13px}
+.it td.a{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pt{width:100%;border-collapse:collapse;font-size:14px}
+.pt td,.pt th{padding:7px 6px;border-top:1px solid var(--line);text-align:left}
+.pt th{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.pt input[type=number]{width:64px}
+.pt td.a{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pt input[type=checkbox]{width:22px;height:22px}
+.st-ok{color:var(--good)}.st-warn{color:var(--warn)}.st-bad{color:var(--bad)}
+.cdel{flex:0 0 auto;border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:2px 6px;border-radius:6px;cursor:pointer}
+.cdel:hover{color:var(--bad)}
+.it input{width:96px;padding:4px 6px;font-size:13px}
+.elist .er{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.elist .er .v{white-space:nowrap;font-size:13px}
+.elist .er input{width:92px;padding:4px 6px;font-size:13px}
+.elist .er .t{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.box{position:relative}
+.wbar{display:flex;justify-content:flex-end;gap:2px;margin:-6px -6px 4px 0;min-height:24px}
+.wb{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;width:30px;height:26px;font-size:14px;line-height:1;cursor:pointer;padding:0}
+.wb:hover{color:var(--ink,inherit);border-color:var(--muted)}
+.wgrip{cursor:grab;touch-action:none;letter-spacing:-1px}
+.box.wdrag{opacity:.75;outline:2px dashed var(--muted);outline-offset:2px}
+.box.wcol>*{display:none!important}
+.box.wcol>.wbar,.box.wcol>.wh{display:flex!important}
+.box.wcol .wtg{transform:rotate(-90deg)}
+.box.wcol{padding-bottom:10px}
+.ltools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 4px}
+.ltools .pill{font-size:12px;padding:4px 10px}
+.pfbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+.pfbar select{width:auto;max-width:100%}
+.cprev{flex:0 0 auto;border:0;background:none;color:var(--accent);font-size:16px;line-height:1;padding:2px 5px;border-radius:6px;cursor:pointer}
+.cprev:hover{background:var(--accent-soft)}.cprev:disabled{opacity:.35;cursor:default}
+.mtools{display:flex;gap:8px;flex-wrap:wrap}
+.pill.danger{color:var(--bad);border-color:var(--bad)}.pill.danger.arm{background:var(--bad);color:#fff}
+.donuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:820px){.donuts{grid-template-columns:minmax(0,1fr)}}
+.dn{display:flex;flex-direction:column;align-items:center;gap:10px}
+.dn svg{width:190px;height:190px;flex:0 0 auto}
+.dn .ctr{font-family:var(--body);fill:var(--fg)}
+.dleg{list-style:none;margin:0;padding:0;width:100%;font-size:13px}
+.dleg li{display:flex;align-items:center;gap:8px;padding:3px 0;min-width:0}
+.dleg i{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+.dleg .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dleg .v{font-variant-numeric:tabular-nums;white-space:nowrap}
+.dleg .p{color:var(--muted);width:40px;text-align:right;font-variant-numeric:tabular-nums}
+:root{--c1:#2E7DB8;--c2:#E08A2B;--c3:#2F9E6E;--c4:#B8509B;--c5:#7A62C9;--c6:#C9503C;--c7:#2BA3A8;--c8:#A58B1F;--c9:#7D8B96}
+:root[data-theme="dark"]{--c1:#6FB0E6;--c2:#F0A559;--c3:#5FD08F;--c4:#E283C4;--c5:#A592EA;--c6:#F2877F;--c7:#58CBD0;--c8:#D7BD4E;--c9:#93A6B3}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--c1:#6FB0E6;--c2:#F0A559;--c3:#5FD08F;--c4:#E283C4;--c5:#A592EA;--c6:#F2877F;--c7:#58CBD0;--c8:#D7BD4E;--c9:#93A6B3}}
+
+.cdel.arm{background:var(--bad);color:#fff;font-size:12px;padding:5px 8px}
+.addcat{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.addc{display:flex;flex-wrap:wrap;gap:6px}
+.addc input[type=text]{flex:1 1 160px;min-width:0}
+.addc select{max-width:150px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:right;border-top:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{border-top:0;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:normal}
+tfoot td{font-weight:600;background:var(--surface2)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+summary{cursor:pointer;font-weight:600}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) 110px 110px;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.trow:first-of-type{border-top:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card-h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.chip{font-size:12px;padding:3px 9px;border-radius:999px;white-space:nowrap;font-weight:500}
+.chip.ok{background:var(--good-soft);color:var(--good)}
+.chip.check{background:var(--warn-soft);color:var(--warn)}
+.chip.later{background:var(--surface2);color:var(--muted)}
+.amt{font-family:var(--display);font-weight:500;font-size:15px;overflow-wrap:anywhere}
+.how{font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.facts{display:flex;flex-wrap:wrap;gap:6px}
+.facts span{background:var(--surface2);border-radius:6px;padding:3px 9px;font-size:13px}
+ul.src{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+ul.src li{margin:3px 0}
+.months{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;margin-bottom:4px}
+.mt{flex:0 0 auto;position:relative;display:flex;flex-direction:column;align-items:center;min-width:62px;padding:7px 12px 10px;border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:10px;line-height:1.2;font:inherit;cursor:pointer}
+.mt .mm{font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:13px}
+.mt .my{font-size:11px;opacity:.7}
+.mt[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink,#fff)}
+.mt[data-now]::after{content:'';position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.mt .dot{position:absolute;bottom:3px;left:50%;margin-left:-2px;width:4px;height:4px;border-radius:50%;background:var(--good)}
+.mt[aria-selected="true"] .dot{background:currentColor}
+.mt.add{min-width:44px;justify-content:center;font-size:20px;opacity:.7}
+.hrow{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+tr.cur td{background:var(--surface2)}
+.sbar{display:grid;grid-template-columns:90px minmax(0,1fr) 100px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
+.sbar .tr{height:10px;border-radius:5px;background:var(--surface2);overflow:hidden}
+.sbar .tr i{display:block;height:100%;border-radius:5px}
+.sbar .v{text-align:right;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:no-preference){.row .bar i,.gauge .b i{transition:width .25s ease}}
+</style>
+<style id="apple">
+/* ===== Apple-style оформление ===== */
+:root{
+  --bg:#F2F2F7; --surface:#FFFFFF; --surface2:#F2F2F7; --fg:#1C1C1E; --muted:#6C6C70; --line:#E5E5EA;
+  --accent:#007AFF; --accent-ink:#FFFFFF; --accent-soft:#E4F0FF;
+  --good:#248A3D; --good-soft:#E3F6E8; --warn:#B25000; --warn-soft:#FFF1DB; --bad:#D70015; --bad-soft:#FFE5E7;
+  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,Roboto,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,Roboto,sans-serif;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);
+  --c1:#007AFF;--c2:#FF9500;--c3:#34C759;--c4:#AF52DE;--c5:#5856D6;--c6:#FF3B30;--c7:#30B0C7;--c8:#FFCC00;--c9:#8E8E93;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --surface:#1C1C1E; --surface2:#2C2C2E; --fg:#FFFFFF; --muted:#98989D; --line:#38383A;
+    --accent:#0A84FF; --accent-ink:#FFFFFF; --accent-soft:#0B2A4A;
+    --good:#30D158; --good-soft:#12301B; --warn:#FF9F0A; --warn-soft:#3A2A0B; --bad:#FF453A; --bad-soft:#40181A;
+    --shadow:none;
+    --c1:#0A84FF;--c2:#FF9F0A;--c3:#30D158;--c4:#BF5AF2;--c5:#5E5CE6;--c6:#FF453A;--c7:#40C8E0;--c8:#FFD60A;--c9:#98989D;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#1C1C1E; --surface2:#2C2C2E; --fg:#FFFFFF; --muted:#98989D; --line:#38383A;
+  --accent:#0A84FF; --accent-ink:#FFFFFF; --accent-soft:#0B2A4A;
+  --good:#30D158; --good-soft:#12301B; --warn:#FF9F0A; --warn-soft:#3A2A0B; --bad:#FF453A; --bad-soft:#40181A;
+  --shadow:none;
+  --c1:#0A84FF;--c2:#FF9F0A;--c3:#30D158;--c4:#BF5AF2;--c5:#5E5CE6;--c6:#FF453A;--c7:#40C8E0;--c8:#FFD60A;--c9:#98989D;
+}
+body{-webkit-font-smoothing:antialiased;letter-spacing:-.011em;font-size:16px;line-height:1.45}
+.wrap{gap:18px}
+h1{font-weight:700;font-size:clamp(28px,7vw,40px);letter-spacing:-.03em;line-height:1.08}
+h2{font-weight:600;font-size:20px;letter-spacing:-.02em;margin-bottom:6px}
+h3{font-weight:600;letter-spacing:-.01em}
+.sub{font-size:15px}
+.small{font-size:13px}
+.box,.kpi,.card,details,.sv{border:0;box-shadow:var(--shadow)}
+.box{border-radius:22px;padding:20px}
+.kpi{border-radius:20px;padding:16px 18px}
+.kpi .l{text-transform:none;letter-spacing:0;font-size:13px;font-weight:500}
+.kpi .v{font-family:var(--display);font-weight:600;font-size:clamp(22px,5.4vw,30px);letter-spacing:-.025em;margin-top:6px}
+.kpi .kmini{border-top:1px solid var(--line)}
+.card{border-radius:20px}
+details{border-radius:18px}
+.sv{border-radius:18px}
+.note{border-radius:16px;padding:12px 16px}
+.tw{border:0;border-radius:16px;box-shadow:var(--shadow)}
+input,select{background:var(--surface2);border:0;border-radius:12px;padding:11px 13px;font-size:16px;transition:box-shadow .15s,background .15s}
+input:focus,select:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:2px;border-radius:10px}
+select{-webkit-appearance:none;appearance:none;padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%238E8E93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+input[type=checkbox]{accent-color:var(--accent)}
+.row.auto input{border:1px dashed var(--line)}
+.row .bar,.gauge .b{height:6px;border-radius:99px}
+.row .bar i,.gauge .b i{border-radius:99px}
+button{transition:transform .12s ease,background .15s,opacity .15s}
+button:active:not(:disabled){transform:scale(.96)}
+.pill{border:0;background:var(--accent-soft);color:var(--accent);font-weight:500;padding:8px 14px;font-size:14px}
+.pill[aria-pressed="true"],.sv .pill.main,.pill.main{background:var(--accent);color:#fff}
+.pill.danger{background:var(--bad-soft);color:var(--bad);border:0}
+.pill.danger.arm{background:var(--bad);color:#fff}
+.calc{border:0;background:var(--accent-soft);border-radius:10px}
+.calc[aria-expanded="true"]{background:var(--accent)}
+.cprev:hover{background:var(--accent-soft)}
+.wb{border:0;background:var(--surface2);border-radius:9px;color:var(--muted)}
+.wb:hover{color:var(--accent);background:var(--accent-soft)}
+.ent{border-radius:14px;background:var(--surface2)}
+.ent .ch{border:0;background:var(--surface)}
+.tabs{position:sticky;top:0;z-index:30;border-bottom:0;gap:6px;padding:8px 2px;margin:0 -2px;-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);background:color-mix(in srgb,var(--bg) 78%,transparent)}
+.tab{border:0;border-radius:999px;padding:8px 16px;font-weight:500;font-size:15px;background:transparent;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.months{gap:8px;padding:2px 2px 8px}
+.mt{border:0;border-radius:16px;box-shadow:var(--shadow);min-width:64px}
+.mt[aria-selected="true"]{background:var(--accent);color:#fff;box-shadow:0 4px 12px color-mix(in srgb,var(--accent) 35%,transparent)}
+.chip{font-weight:600}
+.row,.it td,.pt td,.pt th,.trow,.elist .er,th,td{border-top-color:var(--line)}
+.facts span{border-radius:8px}
+thead th{letter-spacing:.02em}
+.dn .ctr{font-family:var(--display)}
+.dleg i{border-radius:4px}
+.amt{font-family:var(--display);font-weight:600}
+.kpi .v,.amt,h1,h2{font-feature-settings:"tnum" 0}
+.box.wdrag{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+<style id="glass">
+/* ===== Liquid glass, голубовато-серая гамма ===== */
+:root{
+  --bg:#DDE5ED; --surface2:#EAEFF5; --line:rgba(60,80,110,.14);
+  --glass-bg:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,255,255,.22));
+  --glass-bd:rgba(255,255,255,.7);
+  --glass-hi:rgba(255,255,255,.95);
+  --glass-sh:0 10px 30px rgba(40,64,96,.14),0 2px 6px rgba(40,64,96,.08);
+  --card-bg:rgba(255,255,255,.66);
+  --page:radial-gradient(900px 520px at 8% -6%,rgba(112,150,205,.42),transparent 62%),radial-gradient(760px 520px at 104% 6%,rgba(140,176,200,.45),transparent 58%),radial-gradient(900px 600px at 50% 112%,rgba(150,165,205,.35),transparent 60%),linear-gradient(180deg,#E9EFF5 0%,#D6E0EA 100%);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1118; --surface2:#1E2835; --line:rgba(160,185,215,.16);
+    --glass-bg:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.05));
+    --glass-bd:rgba(255,255,255,.2); --glass-hi:rgba(255,255,255,.38);
+    --glass-sh:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
+    --card-bg:rgba(24,33,45,.66);
+    --page:radial-gradient(900px 520px at 8% -6%,rgba(40,90,160,.45),transparent 62%),radial-gradient(760px 520px at 104% 6%,rgba(60,100,130,.38),transparent 58%),radial-gradient(900px 600px at 50% 112%,rgba(60,70,130,.32),transparent 60%),linear-gradient(180deg,#0B1118 0%,#121B26 100%);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1118; --surface2:#1E2835; --line:rgba(160,185,215,.16);
+  --glass-bg:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.05));
+  --glass-bd:rgba(255,255,255,.2); --glass-hi:rgba(255,255,255,.38);
+  --glass-sh:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
+  --card-bg:rgba(24,33,45,.66);
+  --page:radial-gradient(900px 520px at 8% -6%,rgba(40,90,160,.45),transparent 62%),radial-gradient(760px 520px at 104% 6%,rgba(60,100,130,.38),transparent 58%),radial-gradient(900px 600px at 50% 112%,rgba(60,70,130,.32),transparent 60%),linear-gradient(180deg,#0B1118 0%,#121B26 100%);
+}
+body{background:var(--page) fixed,var(--bg);min-height:100vh}
+.ttl{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ttl h1{min-width:0}
+/* панели и карточки: матовое стекло */
+.box,.card,details,.sv,.tw{background:var(--card-bg);border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);box-shadow:var(--glass-sh),inset 0 1px 0 var(--glass-hi)}
+.box{border-radius:26px}
+.tw{background:var(--card-bg)}
+tfoot td{background:transparent}
+/* liquid glass: плитки итогов и «На день до зарплаты» */
+.kpi{position:relative;overflow:hidden;isolation:isolate;border-radius:26px;background:var(--glass-bg);border:1px solid var(--glass-bd);
+  -webkit-backdrop-filter:blur(26px) saturate(190%) brightness(1.04);backdrop-filter:blur(26px) saturate(190%) brightness(1.04);
+  box-shadow:var(--glass-sh),inset 0 1.5px 0 var(--glass-hi),inset 0 -1px 0 rgba(255,255,255,.14),inset 0 0 26px rgba(255,255,255,.14);
+  transition:transform .35s cubic-bezier(.22,1.2,.36,1),box-shadow .35s}
+.kpi::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;pointer-events:none;
+  background:radial-gradient(150px 110px at var(--mx,18%) var(--my,0%),rgba(255,255,255,.75),transparent 70%),linear-gradient(160deg,rgba(255,255,255,.35),transparent 38%);opacity:.75;transition:opacity .3s}
+.kpi::after{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;pointer-events:none;
+  background:radial-gradient(120px 80px at 100% 100%,rgba(120,160,230,.22),transparent 70%)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kpi::before{opacity:.38}}
+:root[data-theme="dark"] .kpi::before{opacity:.38}
+.kpi:hover{transform:translateY(-2px) scale(1.012)}
+.kpi:hover::before{opacity:1}
+/* стеклянные иконки */
+.gbtn,.wb,.calc,.cprev,.cdel,.ent .ch button{
+  display:inline-flex;align-items:center;justify-content:center;color:var(--accent);
+  background:var(--glass-bg);border:1px solid var(--glass-bd);
+  -webkit-backdrop-filter:blur(14px) saturate(180%);backdrop-filter:blur(14px) saturate(180%);
+  box-shadow:0 4px 12px rgba(40,64,96,.12),inset 0 1px 0 var(--glass-hi),inset 0 -1px 0 rgba(255,255,255,.1);
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1),box-shadow .25s,background .2s,color .2s}
+.gbtn:hover,.wb:hover,.calc:hover,.cprev:hover,.cdel:hover{transform:scale(1.18);box-shadow:0 8px 20px rgba(40,64,96,.2),inset 0 1px 0 var(--glass-hi);background:var(--glass-bg)}
+.gbtn:active,.wb:active,.calc:active,.cprev:active,.cdel:active{transform:scale(.94)}
+.cdel,.ent .ch button{color:var(--muted)}
+.cdel:hover{color:var(--bad)}
+.cprev:disabled{opacity:.35}
+.calc[aria-expanded="true"]{background:var(--accent);color:#fff;border-color:transparent}
+.gbtn{width:44px;height:44px;border-radius:50%;flex:0 0 auto;padding:0;cursor:pointer}
+.gbtn svg{width:22px;height:22px;transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
+.gbtn:hover svg{transform:rotate(25deg)}
+.wb{width:32px;height:30px;border-radius:11px;padding:0}
+.wb svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.wgrip svg{fill:currentColor;stroke:none}
+.wup:hover svg{transform:translateY(-2px)}
+.wdn:hover svg{transform:translateY(2px)}
+.wgrip:hover svg{transform:scale(1.2)}
+.wgrip:active{cursor:grabbing}
+.wtg svg{transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.box.wcol .wtg{transform:none}
+.box.wcol .wtg svg{transform:rotate(-90deg)}
+.wb:hover{color:var(--accent)}
+/* остальные элементы: мягкий отклик */
+.pill,.tab,.mt{transition:transform .28s cubic-bezier(.34,1.56,.64,1),background .2s,box-shadow .25s}
+.pill:hover,.mt:hover{transform:scale(1.05)}
+.tab:hover{transform:scale(1.04)}
+.pill{background:linear-gradient(135deg,rgba(255,255,255,.55),rgba(255,255,255,.2));border:1px solid var(--glass-bd);box-shadow:inset 0 1px 0 var(--glass-hi),0 3px 10px rgba(40,64,96,.08);color:var(--accent)}
+.pill[aria-pressed="true"],.sv .pill.main,.pill.main{background:linear-gradient(180deg,#2E93FF,#0A6CF0);color:#fff;border-color:rgba(255,255,255,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 16px rgba(10,108,240,.35)}
+.pill.danger{color:var(--bad)}
+.tabs{background:color-mix(in srgb,var(--bg) 55%,transparent)}
+.tab[aria-selected="true"]{background:var(--glass-bg);border:1px solid var(--glass-bd);box-shadow:inset 0 1px 0 var(--glass-hi),0 4px 14px rgba(40,64,96,.16);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.mt{background:var(--glass-bg);border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(14px) saturate(170%);backdrop-filter:blur(14px) saturate(170%);box-shadow:inset 0 1px 0 var(--glass-hi),0 4px 12px rgba(40,64,96,.1)}
+.mt[aria-selected="true"]{background:linear-gradient(180deg,#2E93FF,#0A6CF0);border-color:rgba(255,255,255,.35)}
+input,select{background:rgba(255,255,255,.55);box-shadow:inset 0 1px 2px rgba(40,64,96,.12);border:1px solid rgba(255,255,255,.6)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) input,:root:not([data-theme="light"]) select{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}}
+:root[data-theme="dark"] input,:root[data-theme="dark"] select{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
+.row input[readonly]:not(#e_util),.row.auto input{background:var(--surface2)}
+.note{border:1px solid var(--glass-bd);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+h1{background:linear-gradient(180deg,var(--fg),color-mix(in srgb,var(--fg) 70%,#5A7BA8));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.tabs{background:color-mix(in srgb,var(--bg) 78%,transparent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pill:not(.main):not([aria-pressed="true"]){background:rgba(10,132,255,.18);border-color:rgba(255,255,255,.12);color:#6CB2FF}}
+:root[data-theme="dark"] .pill:not(.main):not([aria-pressed="true"]){background:rgba(10,132,255,.18);border-color:rgba(255,255,255,.12);color:#6CB2FF}
+/* выравнивание текста по центру относительно иконок */
+.whead{display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:8px 12px;min-height:34px;margin:0 0 10px}
+.whead>.wh{flex:1 1 0;min-width:0;margin:0;display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;justify-content:space-between}
+.whead>h2.wh{display:block}
+.whead>.wh h2,.whead>h2{margin:0;line-height:1.2}
+.whead>.wbar{margin:0;min-height:0;flex:0 0 auto;align-items:center}
+.box.wcol>*{display:none!important}
+.box.wcol>.whead{display:flex!important;margin-bottom:0}
+.box.wcol>.whead>.wh{display:flex!important}
+.box.wcol>.whead>.wh>:not(h2){display:none}
+.lb,.hrow,.card-h,.seg,.pfbar,.addc,.ent .ch,.ent .addr,.sv,.ttl,.gauge .t{align-items:center}
+.lb label,.field label{line-height:1.25}
+.calc,.cprev,.cdel,.wb,.gbtn,.ent .ch button{line-height:1;text-align:center}
+.calc{width:32px;height:32px;min-width:32px;padding:0;font-size:16px;border-radius:11px}
+.cprev,.cdel{width:30px;height:30px;padding:0;border-radius:10px;font-size:16px}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.2;min-height:34px;text-align:center}
+.tab{display:inline-flex;align-items:center;justify-content:center;min-height:38px}
+.chip{display:inline-flex;align-items:center}
+.kpi{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.kpi .l,.kpi .v,.kpi .d,.kpi .kmini{text-align:center;width:100%}
+.kpi .kmini{max-width:100%}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.kpi:hover,.gbtn:hover,.wb:hover,.calc:hover,.pill:hover{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="ttl"><h1>Мои ежемесячные расходы</h1><button type="button" class="gbtn" id="theme-btn" aria-label="Тема"></button></div>
+    <p class="sub">Улан-Удэ · семья из трёх человек · тарифы Республиканской службы по тарифам Бурятии</p>
+    <p class="small muted" id="dataStatus" aria-live="polite">Загружаю актуальные данные…</p>
+  </header>
+
+  <div class="months" id="months" role="tablist" aria-label="Месяцы"></div>
+  <p class="small muted" id="mnote" style="margin:0 0 14px"></p>
+
+  <div class="kpis" aria-live="polite">
+    <div class="kpi"><div class="l">Доход в месяц</div><div class="v" id="k_inc">0</div><div class="d">на руки, семья</div></div>
+    <div class="kpi"><div class="l">Расходы</div><div class="v" id="k_exp">0</div><div class="d" id="k_exp_d"></div></div>
+    <div class="kpi"><div class="l">Остаток</div><div class="v" id="k_rest">0</div><div class="d" id="k_rest_d"></div><div class="kmini">Разница месяца: <b id="k_diff">0</b></div></div>
+    <div class="kpi"><div class="l">ЖКУ в месяц</div><div class="v" id="k_u">0</div><div class="d" id="k_u_d"></div></div>
+  </div>
+
+  <div class="kpi" id="daily-card" style="margin:10px 0 0"><div class="l">На день до зарплаты</div><div class="v" id="k_day">—</div><div class="d" id="k_day_d"></div></div>
+
+  <div class="seg" role="group" aria-label="Какие тарифы учитывать">
+    <span class="cap">Тарифы в расчёте:</span>
+    <button class="pill" data-sel="3" id="selAuto" aria-pressed="true">По месяцу (авто)</button>
+    <button class="pill" data-sel="0" id="selA" aria-pressed="false">До 1 октября 2026</button>
+    <button class="pill" data-sel="1" id="selB" aria-pressed="false">С 1 октября 2026</button>
+    <button class="pill" data-sel="2" aria-pressed="false" id="selScn">Сценарий: ещё +8%</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-b" aria-selected="true" aria-controls="p-b">Бюджет</button>
+    <button class="tab" role="tab" id="tab-p" aria-selected="false" aria-controls="p-p">Платежи</button>
+    <button class="tab" role="tab" id="tab-w" aria-selected="false" aria-controls="p-w">Расходы жены</button>
+    <button class="tab" role="tab" id="tab-u" aria-selected="false" aria-controls="p-u">ЖКУ и тарифы</button>
+    <button class="tab" role="tab" id="tab-l" aria-selected="false" aria-controls="p-l">Льготы и выплаты</button>
+    <button class="tab" role="tab" id="tab-s" aria-selected="false" aria-controls="p-s">Итоги по месяцам</button>
+  </div>
+
+  <!-- БЮДЖЕТ -->
+  <section id="p-b" role="tabpanel" aria-labelledby="tab-b" class="sect">
+    <div class="sv"><button type="button" class="pill main" data-save="1">Сохранить изменения</button><span class="sst small muted" aria-live="polite">Сохраняется на этом устройстве</span><button type="button" class="pill sx" data-exp="1" hidden>Скачать копию</button><button type="button" class="pill sx" data-imp="1" hidden>Загрузить копию</button></div>
+    <p class="note info">Суммы в полях заполнены примерами. Кнопка ＋ у категории открывает счётчик: вносите траты из банка по одной, и они сложатся в итог сами. Замените их своими, расчёт и итоги обновятся сразу. Данные сохраняются в этом браузере.</p>
+    <div class="pfbar"><label class="small" for="pf_b">Списывать с карты:</label><select data-pf id="pf_b"><option value="vtb">Карта ВТБ</option><option value="alfa">Карта Альфа Банк</option><option value="oth">Другие счета и наличные</option><option value="none">Не списывать</option></select><span class="small muted" data-pfsum></span></div>
+    <div class="box" id="imp-card">
+      <h2>Загрузить из банка или по фото</h2>
+      <p class="muted small">Выписку скачайте в приложении банка в формате CSV (сейчас читается формат ВТБ). Приложение разложит операции по категориям, вы проверите и подтвердите. Уже внесённые операции повторно не добавляются. Фото чека распознаёт Claude, он же прочитает снимок экрана с квитанциями ЖКХ.</p>
+      <div class="hrow" style="justify-content:flex-start;gap:8px"><button type="button" class="pill main" data-csv="1">Выписка из банка (CSV)</button><button type="button" class="pill main" data-photo="1" id="btn-photo" hidden>Фото чека или квитанции</button></div>
+      <div id="imp-box" style="margin-top:10px" hidden></div>
+    </div>
+    <div class="grid2">
+      <div class="box">
+        <h2 id="inc-h">Доходы в месяц, на руки</h2>
+        <div class="fgrid" style="grid-template-columns:1fr">
+          <div class="field"><div class="lb"><label for="i_me">Моя зарплата, ₽</label><button type="button" class="calc" data-ent="i_me" aria-expanded="false" aria-label="Счётчик сумм" title="Сложить суммы">＋</button></div><input class="p m" id="i_me" type="number" inputmode="decimal" value="70000" min="0"><div class="ent" id="ent_i_me" hidden></div></div>
+          <div class="field"><div class="lb"><label for="i_sp">Зарплата супруги, ₽</label><button type="button" class="calc" data-ent="i_sp" aria-expanded="false" aria-label="Счётчик сумм" title="Сложить суммы">＋</button></div><input class="p m" id="i_sp" type="number" inputmode="decimal" value="45000" min="0"><div class="ent" id="ent_i_sp" hidden></div></div>
+          <div class="field"><div class="lb"><label for="i_oth">Пособия, подработка, прочее, ₽</label><button type="button" class="calc" data-ent="i_oth" aria-expanded="false" aria-label="Счётчик сумм" title="Сложить суммы">＋</button></div><input class="p m" id="i_oth" type="number" inputmode="decimal" value="0" min="0"><div class="ent" id="ent_i_oth" hidden></div></div>
+          <div class="field"><div class="lb"><label for="i_cash">Пополнения наличными и прочие поступления, ₽</label><button type="button" class="calc" data-ent="i_cash" aria-expanded="false" aria-label="Счётчик сумм" title="Сложить суммы">＋</button></div><input class="p m" id="i_cash" type="number" inputmode="decimal" step="any" value="0" min="0"><div class="ent" id="ent_i_cash" hidden></div></div>
+          <div class="field"><div class="lb"><label for="i_vac">Отпускные, ₽</label><button type="button" class="calc" data-ent="i_vac" aria-expanded="false" aria-label="Счётчик сумм" title="Сложить суммы">＋</button></div><input class="p m" id="i_vac" type="number" inputmode="decimal" step="any" value="0" min="0"><div class="ent" id="ent_i_vac" hidden></div></div>
+          <div class="field"><div class="lb"><label for="i_mat">Материальная помощь, ₽</label><button type="button" class="calc" data-ent="i_mat" aria-expanded="false" aria-label="Счётчик сумм" title="Сложить суммы">＋</button></div><input class="p m" id="i_mat" type="number" inputmode="decimal" step="any" value="0" min="0"><div class="ent" id="ent_i_mat" hidden></div></div>
+        </div>
+        <div id="inc-extra"></div>
+        <div class="addcat" id="add-inc"></div>
+      </div>
+      <div class="box">
+        <h2>Правило 50 / 30 / 20</h2>
+        <p class="muted small">Ориентир: до 50% дохода на обязательное, до 30% на желания, от 20% на накопления. Вертикальная метка показывает цель.</p>
+        <div id="gauges"></div>
+      </div>
+    </div>
+    <div class="box" id="charts-box">
+      <h2 id="ch-h">Куда уходят деньги</h2>
+      <p class="muted small">Круговые диаграммы выбранного месяца: на что больше всего расходов и откуда больше всего доходов. Мелкие категории объединены в «Остальное».</p>
+      <div class="donuts"><div class="dn" id="dn-exp"></div><div class="dn" id="dn-inc"></div></div>
+    </div>
+    <div class="box">
+      <div class="hrow"><h2 id="exp-h">Расходы в месяц</h2><span class="mtools"><button type="button" class="pill" id="copy-prev" title="Скопировать суммы всех категорий из прошлого месяца">Всё как в прошлом месяце</button><button type="button" class="pill danger" id="m-reset" title="Обнулить все суммы этого месяца">Обнулить месяц</button></span></div>
+      <div id="exp-rows"></div>
+      <div class="addcat" id="add-main"></div>
+    </div>
+    <div class="box">
+      <h2 id="mp-h">Маркетплейсы</h2>
+      <p class="muted small">Заказы по площадкам: нажмите ＋ у площадки и вносите каждую покупку суммой. Итог идёт в общий бюджет строкой «Маркетплейсы». Покупки Wildberries, Ozon и Яндекс Маркета из банковской выписки попадают сюда сами.</p>
+      <div id="mp-rows"></div>
+      <div class="addcat" id="add-mp"></div>
+      <p class="small" id="mp-sum" style="margin-top:10px"></p>
+    </div>
+    <div class="note" id="delta-note"></div>
+    <div class="note info" id="stmt-note" hidden><b>Выписка за 01–14.10.2026 загружена.</b> Разобрано 69 операций. Расходы разложены по категориям, каждая операция лежит в счётчике «＋» своей категории. «Столовая» отнесена к рабочим обедам, остальные кафе, кофе и шаурма к отдельной категории. Не считаются расходами переводы между своими счетами и на карту Т-Банка: исходящие 14 836 ₽, входящие 2 135,24 ₽. Комиссия 93,08 ₽ за перевод на карту Т-Банка учтена в «Комиссиях банка». Взнос 5 000 ₽ через банкомат записан в поступления. Суммы категорий показывают траты за первые 14 дней месяца, остальные вносите через «＋».</div>
+  </section>
+
+  <!-- ПЛАТЕЖИ -->
+  <section id="p-p" role="tabpanel" aria-labelledby="tab-p" class="sect" hidden>
+    <div class="sv"><button type="button" class="pill main" data-save="1">Сохранить изменения</button><span class="sst small muted" aria-live="polite">Сохраняется на этом устройстве</span><button type="button" class="pill sx" data-exp="1" hidden>Скачать копию</button><button type="button" class="pill sx" data-imp="1" hidden>Загрузить копию</button></div>
+    <div class="box">
+      <h2>Деньги и зарплата</h2>
+      <p class="muted small">Дни выплат и остатки нужны для строки «На день до зарплаты» вверху: от денег на счетах отнимаются неоплаченные платежи до ближайшей выплаты, остаток делится на дни. Впишите остаток по картам один раз: дальше он меняется сам. Когда вы вносите расход на вкладках «Бюджет» и «ЖКУ и тарифы» (кнопкой ＋ или числом в поле), сумма списывается с выбранной карты, а внесённый доход зачисляется на неё. Загрузка выписки и скриншотов ЕИРЦ, перенос из прошлого месяца и сброс остатки не меняют, а чек по фото списывается.</p>
+      <div class="fgrid">
+        <div class="field"><label for="pay_d1">День аванса (число месяца)</label><input class="p" id="pay_d1" type="number" inputmode="numeric" min="1" max="31" placeholder="например, 10"></div>
+        <div class="field"><label for="pay_d2">День зарплаты (число месяца)</label><input class="p" id="pay_d2" type="number" inputmode="numeric" min="1" max="31" placeholder="например, 25"></div>
+        <div class="field"><label for="bal_vtb">Карта ВТБ, ₽</label><input class="p" id="bal_vtb" type="number" inputmode="decimal" step="any" placeholder="остаток на карте"></div>
+        <div class="field"><label for="bal_alfa">Карта Альфа Банк, ₽</label><input class="p" id="bal_alfa" type="number" inputmode="decimal" step="any" placeholder="остаток на карте"></div>
+        <div class="field"><label for="bal">Другие счета и наличные, ₽</label><input class="p" id="bal" type="number" inputmode="decimal" step="any" placeholder="если есть"></div>
+        <div class="field"><label for="pay_from">Списывать расходы с</label><select class="p" id="pay_from"><option value="vtb">Карта ВТБ</option><option value="alfa">Карта Альфа Банк</option><option value="oth">Другие счета и наличные</option><option value="none">Не списывать</option></select></div>
+      </div>
+      <div id="clog"></div>
+    </div>
+    <div class="box">
+      <h2 id="pay-h">Платежи месяца</h2>
+      <p class="muted small">Число месяца вы задаёте один раз. Сумма берётся из категории бюджета этого месяца, поэтому копируется вместе с ним. Отметка «оплачено» своя для каждого месяца.</p>
+      <div class="tw"><table class="pt" style="min-width:520px"><thead><tr><th>Платёж</th><th>День</th><th>Сумма</th><th>Статус</th><th>Оплачено</th><th></th></tr></thead><tbody id="pay-list"></tbody><tfoot id="pay-foot"></tfoot></table></div>
+      <div class="fgrid" style="margin-top:12px">
+        <div class="field"><label for="pay-new-name">Новый платёж, название</label><input id="pay-new-name" type="text" placeholder="например, Кредит в банке"></div>
+        <div class="field"><label for="pay-new-cat">Из какой категории берётся сумма</label><select id="pay-new-cat"></select></div>
+        <div class="field"><label for="pay-new-day">Число месяца</label><input id="pay-new-day" type="number" inputmode="numeric" min="1" max="31"></div>
+      </div>
+      <div class="hrow" style="justify-content:flex-start;margin-top:8px"><button type="button" class="pill" data-padd="1">Добавить платёж</button></div>
+    </div>
+  </section>
+
+  <!-- РАСХОДЫ ЖЕНЫ -->
+  <section id="p-w" role="tabpanel" aria-labelledby="tab-w" class="sect" hidden>
+    <div class="sv"><button type="button" class="pill main" data-save="1">Сохранить изменения</button><span class="sst small muted" aria-live="polite">Сохраняется на этом устройстве</span><button type="button" class="pill sx" data-exp="1" hidden>Скачать копию</button><button type="button" class="pill sx" data-imp="1" hidden>Загрузить копию</button></div>
+    <div class="box">
+      <h2 id="w-h">Расходы жены</h2>
+      <p class="muted small">Личные траты жены с тем же счётчиком ＋. Итог идёт в общий бюджет строкой «Расходы жены». Если укажете последние четыре цифры её карты, операции по этой карте при загрузке выписки будут попадать сюда.</p>
+      <div class="fgrid" style="margin-bottom:10px"><div class="field"><label for="wife_card">Последние 4 цифры карты жены</label><input class="p" id="wife_card" type="text" inputmode="numeric" maxlength="4" placeholder="например, 0997"></div></div>
+      <div id="w-rows"></div>
+      <div class="addcat" id="add-w"></div>
+      <p class="small" id="w-sum" style="margin-top:10px"></p>
+    </div>
+  </section>
+
+  <!-- ЖКУ -->
+  <section id="p-u" role="tabpanel" aria-labelledby="tab-u" class="sect" hidden>
+    <div class="sv"><button type="button" class="pill main" data-save="1">Сохранить изменения</button><span class="sst small muted" aria-live="polite">Сохраняется на этом устройстве</span><button type="button" class="pill sx" data-exp="1" hidden>Скачать копию</button><button type="button" class="pill sx" data-imp="1" hidden>Загрузить копию</button></div>
+    <div class="pfbar"><label class="small" for="pf_u">Списывать с карты:</label><select data-pf id="pf_u"><option value="vtb">Карта ВТБ</option><option value="alfa">Карта Альфа Банк</option><option value="oth">Другие счета и наличные</option><option value="none">Не списывать</option></select><span class="small muted" data-pfsum></span></div>
+    <div class="box" id="eirc-card">
+      <h2>Скриншоты из ЕИРЦ</h2>
+      <p class="muted small" id="eirc-note">Загрузка скриншотов работает в версии внутри Claude. Здесь вносите суммы и показатели вручную в блоках ниже.</p>
+      <div class="hrow" style="justify-content:flex-start;gap:8px"><button type="button" class="pill main" data-eirc="1" id="btn-eirc" hidden>Добавить скриншоты ЕИРЦ</button></div>
+      <div id="eirc-box" style="margin-top:10px" hidden></div>
+    </div>
+    <div class="box">
+      <h2>Квитанции по поставщикам</h2>
+      <p class="muted small" id="fact-hint">Впишите суммы к оплате по каждому поставщику (как в личном кабинете). Их сумма заменит расчёт по тарифам в бюджете этого месяца. Если разбивки нет, внесите общую сумму в последнее поле. Оставьте всё пустым, чтобы считать по тарифам.</p>
+      <div class="fgrid">
+        <div class="field"><label for="f_tgk">ТГК-14: отопление и горячая вода, ₽</label><input class="p m" id="f_tgk" type="number" inputmode="decimal" min="0" step="any" value="4012.28" placeholder="0"></div>
+        <div class="field"><label for="f_vod">Водоканал: водоснабжение и водоотведение, ₽</label><input class="p m" id="f_vod" type="number" inputmode="decimal" min="0" step="any" value="683.40" placeholder="0"></div>
+        <div class="field"><label for="f_el">Читаэнергосбыт: электроэнергия, ₽</label><input class="p m" id="f_el" type="number" inputmode="decimal" min="0" step="any" value="806.34" placeholder="0"></div>
+        <div class="field"><label for="f_zhks">ЖКС «Саяны»: содержание жилья, ₽</label><input class="p m" id="f_zhks" type="number" inputmode="decimal" min="0" step="any" value="1105.56" placeholder="0"></div>
+        <div class="field"><label for="f_dom">Дом плюс, ₽</label><input class="p m" id="f_dom" type="number" inputmode="decimal" min="0" step="any" value="95" placeholder="0"></div>
+        <div class="field"><label for="f_kap">Фонд капитального ремонта, ₽</label><input class="p m" id="f_kap" type="number" inputmode="decimal" min="0" step="any" value="555.72" placeholder="0"></div>
+        <div class="field"><label for="f_eko">ЭкоАльянс: вывоз мусора, ₽</label><input class="p m" id="f_eko" type="number" inputmode="decimal" min="0" step="any" value="175.78" placeholder="0"></div>
+        <div class="field"><label for="e_util_fact">Общая сумма без разбивки, ₽</label><input class="p m" id="e_util_fact" type="number" inputmode="decimal" min="0" step="any" value="" placeholder="0"></div>
+      </div>
+      <p class="small" id="fact-cmp" style="margin-top:10px"></p>
+      <h3 style="margin:16px 0 4px">Сальдо по услугам внутри поставщиков</h3>
+      <p class="muted small">Из лицевых счетов ЕИРЦ на 14.10.2026: начисления октября на тот момент ещё 0,00, значит это остаток за прошлый месяц. Суммы по услугам нужны, чтобы по тарифам восстановить реальный объём потребления.</p>
+      <div class="fgrid">
+        <div class="field"><label for="s_cold">Водоснабжение (холодная вода), ₽</label><input class="p m" id="s_cold" type="number" inputmode="decimal" min="0" step="any" value="188.11" placeholder="0"></div>
+        <div class="field"><label for="s_sew">Водоотведение, ₽</label><input class="p m" id="s_sew" type="number" inputmode="decimal" min="0" step="any" value="495.29" placeholder="0"></div>
+        <div class="field"><label for="s_heat">Отопление (ТГК-14), ₽</label><input class="p m" id="s_heat" type="number" inputmode="decimal" min="0" step="any" value="2863.06" placeholder="0"></div>
+        <div class="field"><label for="s_hot">Горячая вода (ТГК-14), ₽</label><input class="p m" id="s_hot" type="number" inputmode="decimal" min="0" step="any" value="1149.22" placeholder="0"></div>
+      </div>
+      <div id="svc-cmp" style="margin-top:10px"></div>
+    </div>
+    <div class="box">
+      <h2>Мои параметры</h2>
+      <p class="muted small" id="u-mnote">Объёмы подставьте по своим счётчикам или квитанции. Значения по умолчанию примерные.</p>
+      <div class="fgrid">
+        <div class="field"><label for="u_area">Площадь квартиры, м²</label><input class="p" id="u_area" type="number" inputmode="decimal" value="54"></div>
+        <div class="field"><label for="u_people">Проживает человек</label><input class="p" id="u_people" type="number" inputmode="decimal" value="3"></div>
+        <div class="field"><label for="u_cold">Холодная вода, м³ на человека в месяц</label><input class="p m" id="u_cold" type="number" inputmode="decimal" step="any" value="3.5"></div>
+        <div class="field"><label for="u_hot">Горячая вода, м³ на человека в месяц</label><input class="p m" id="u_hot" type="number" inputmode="decimal" step="any" value="2.5"></div>
+        <div class="field"><label for="u_hottype">Система теплоснабжения дома</label>
+          <select class="p" id="u_hottype"><option value="closed">Закрытая</option><option value="open">Открытая</option></select></div>
+        <div class="field"><label for="u_kwh">Электроэнергия, кВт·ч в месяц</label><input class="p m" id="u_kwh" type="number" inputmode="decimal" value="250"></div>
+        <div class="field"><label for="u_norm">Отопление, Гкал на м² в месяц</label><input class="p m" id="u_norm" type="number" inputmode="decimal" step="any" value="0.0233"></div>
+        <div class="field"><label for="u_tko">ТКО, м³ на человека в год</label><input class="p" id="u_tko" type="number" inputmode="decimal" step="any" value="2"></div>
+        <div class="field"><label for="u_content">Содержание жилья, ₽ за м²</label><input class="p" id="u_content" type="number" inputmode="decimal" step="any" value="26"></div>
+        <div class="field"><label for="u_cap">Капремонт, ₽ за м²</label><input class="p" id="u_cap" type="number" inputmode="decimal" step="any" value="13"></div>
+        <div class="field"><label for="u_scn">Сценарий: следующее повышение, %</label><input class="p" id="u_scn" type="number" inputmode="decimal" step="any" value="8"></div>
+      </div>
+      <p class="muted small" style="margin-top:10px">Норматив отопления 0,0233 Гкал/м² для Улан-Удэ указан на сайте ТГК-14. Если платите за отопление равномерно в течение года, возьмите среднемесячное значение из квитанции. Норматив ТКО, содержание жилья и капремонт возьмите из квитанции: здесь стоят примерные значения.</p>
+    </div>
+
+    <div class="tw"><table>
+      <thead><tr><th>Услуга</th><th>Объём</th><th id="th0">До 1 окт.</th><th id="th1">С 1 окт.</th><th id="th-scn">Сценарий</th><th>Разница</th></tr></thead>
+      <tbody id="u-body"></tbody>
+      <tfoot id="u-foot"></tfoot>
+    </table></div>
+
+    <div class="grid2">
+      <div class="box" id="u-sum"></div>
+      <div class="note info" id="u-hint"></div>
+    </div>
+
+    <details>
+      <summary>Тарифы Улан-Удэ (можно изменить)</summary>
+      <p class="muted small" style="margin:8px 0" id="t-note"></p>
+      <div class="trow" style="font-size:12px;color:var(--muted)"><span>Услуга</span><span id="th0b">До 1 окт.</span><span id="th1b">С 1 окт.</span></div>
+      <div id="t-edit"></div>
+      <div class="seg" style="margin-top:10px"><button class="pill" id="t-reset" type="button">Сбросить мои правки</button></div>
+      <p class="small muted" id="t-ovr" style="margin-top:8px"></p>
+    </details>
+    <p class="note" id="u-notice" hidden></p>
+  </section>
+
+  <!-- ЛЬГОТЫ -->
+  <section id="p-l" role="tabpanel" aria-labelledby="tab-l" class="sect" hidden>
+    <div class="sv"><button type="button" class="pill main" data-save="1">Сохранить изменения</button><span class="sst small muted" aria-live="polite">Сохраняется на этом устройстве</span><button type="button" class="pill sx" data-exp="1" hidden>Скачать копию</button><button type="button" class="pill sx" data-imp="1" hidden>Загрузить копию</button></div>
+    <div class="box">
+      <h2>Ваша семья</h2>
+      <p class="muted small">Укажите данные своей семьи: меры поддержки ниже подбираются по ним. Данные хранятся только на ваших устройствах и в вашем бюджете, никуда не отправляются. Меры действуют для жителей Республики Бурятия.</p>
+      <div class="fgrid">
+        <div class="field"><label for="b_age">Ваш возраст</label><input class="p" id="b_age" type="number" inputmode="numeric" min="14" max="99" placeholder="например, 30"></div>
+        <div class="field"><label for="b_fam">Семейное положение</label><select class="p" id="b_fam"><option value="m">В браке</option><option value="d">В разводе, ребёнок со мной</option><option value="mo">Мать-одиночка</option><option value="fa">Отец-одиночка</option><option value="wd">Вдова, вдовец</option><option value="g">Опекун, приёмный родитель</option><option value="n">Не в браке, без детей</option></select></div>
+        <div class="field" id="f_spage"><label for="b_spage">Возраст супруга или супруги</label><input class="p" id="b_spage" type="number" inputmode="numeric" min="14" max="99" placeholder="например, 29"></div>
+        <div class="field"><label for="b_kids">Возраст детей, лет, через запятую</label><input class="p" id="b_kids" type="text" inputmode="numeric" autocomplete="off" placeholder="например: 2, 5. До года пишите 0. Нет детей: пусто"></div>
+        <div class="field"><label for="b_job">Ваше место работы</label><select class="p" id="b_job"><option value="">Не указано</option><optgroup label="Государственная и муниципальная служба"><option value="gov_f">Федеральный государственный служащий</option><option value="gov_r">Госслужащий Республики Бурятия</option><option value="gov_m">Муниципальный служащий</option><option value="gov_c">Работник аппарата суда, прокуратуры, органов власти</option></optgroup><optgroup label="Военные и силовые структуры"><option value="mil">Военнослужащий по контракту</option><option value="pol">Сотрудник полиции, Росгвардии</option><option value="sec">Сотрудник МЧС, ФСИН, приставов, таможни, СК, спецслужб</option></optgroup><optgroup label="Образование и наука"><option value="teach">Учитель школы</option><option value="kg">Воспитатель, педагог детского сада</option><option value="prof">Преподаватель колледжа, вуза, дополнительного образования</option><option value="sci">Научный сотрудник</option></optgroup><optgroup label="Здравоохранение"><option value="doc">Врач</option><option value="nurse">Медсестра, фельдшер, средний медперсонал</option><option value="pharm">Фармацевт, провизор</option><option value="medj">Младший медперсонал, санитар</option></optgroup><optgroup label="Культура, спорт, соцсфера"><option value="cult">Работник культуры (библиотека, музей, клуб, театр)</option><option value="sport">Тренер, работник спорта</option><option value="soc">Социальный работник, работник соцзащиты</option></optgroup><optgroup label="Промышленность, строительство, транспорт"><option value="ind">Рабочий на производстве, оператор, слесарь, сварщик</option><option value="build">Строитель, монтажник, отделочник</option><option value="drv">Водитель, курьер, перевозки</option><option value="rail">Железнодорожник, работник авиации и речного транспорта</option><option value="energy">Энергетик, нефтегаз, добыча, геолог</option></optgroup><optgroup label="Сельское и лесное хозяйство"><option value="agr">Агроном, механизатор, животновод, фермер</option><option value="forest">Лесное хозяйство, егерь, лесник</option></optgroup><optgroup label="Торговля и сфера услуг"><option value="shop">Продавец, кассир, торговля, склад</option><option value="cafe">Повар, официант, бариста, общепит</option><option value="beauty">Парикмахер, мастер красоты, массажист</option><option value="hotel">Гостиницы, туризм, гид</option><option value="clean">Клининг, ЖКХ, охрана, обслуживание</option></optgroup><optgroup label="Офис, финансы, IT, творчество"><option value="it">IT-специалист, разработчик, аналитик</option><option value="fin">Банк, финансы, бухгалтер, экономист</option><option value="law">Юрист, нотариус, адвокат</option><option value="mgr">Менеджер, администратор, секретарь, офис</option><option value="mkt">Маркетинг, реклама, дизайн, журналист, фотограф</option><option value="eng">Инженер, проектировщик, архитектор</option></optgroup><optgroup label="Свой бизнес"><option value="ip">Индивидуальный предприниматель</option><option value="self">Самозанятый, фрилансер</option><option value="biz">Руководитель, собственник бизнеса</option></optgroup><optgroup label="Не работаю"><option value="mat">В отпуске по уходу за ребёнком</option><option value="home">Домохозяйка, домохозяин</option><option value="unemp">Безработный, ищу работу</option><option value="stud">Студент, учусь очно</option><option value="pens">Пенсионер</option><option value="dis">Человек с инвалидностью, не работаю</option></optgroup><optgroup label="Другое"><option value="oth">Другая профессия (укажите ниже)</option></optgroup></select></div>
+        <div class="field"><label for="b_jobx">Ваша точная профессия, если не нашли в списке</label><input class="p" id="b_jobx" type="text" maxlength="60" autocomplete="off" placeholder="например, кадастровый инженер"></div>
+        <div class="field" id="f_sjob"><label for="b_sjob">Место работы супруга или супруги</label><select class="p" id="b_sjob"><option value="">Не указано</option><optgroup label="Государственная и муниципальная служба"><option value="gov_f">Федеральный государственный служащий</option><option value="gov_r">Госслужащий Республики Бурятия</option><option value="gov_m">Муниципальный служащий</option><option value="gov_c">Работник аппарата суда, прокуратуры, органов власти</option></optgroup><optgroup label="Военные и силовые структуры"><option value="mil">Военнослужащий по контракту</option><option value="pol">Сотрудник полиции, Росгвардии</option><option value="sec">Сотрудник МЧС, ФСИН, приставов, таможни, СК, спецслужб</option></optgroup><optgroup label="Образование и наука"><option value="teach">Учитель школы</option><option value="kg">Воспитатель, педагог детского сада</option><option value="prof">Преподаватель колледжа, вуза, дополнительного образования</option><option value="sci">Научный сотрудник</option></optgroup><optgroup label="Здравоохранение"><option value="doc">Врач</option><option value="nurse">Медсестра, фельдшер, средний медперсонал</option><option value="pharm">Фармацевт, провизор</option><option value="medj">Младший медперсонал, санитар</option></optgroup><optgroup label="Культура, спорт, соцсфера"><option value="cult">Работник культуры (библиотека, музей, клуб, театр)</option><option value="sport">Тренер, работник спорта</option><option value="soc">Социальный работник, работник соцзащиты</option></optgroup><optgroup label="Промышленность, строительство, транспорт"><option value="ind">Рабочий на производстве, оператор, слесарь, сварщик</option><option value="build">Строитель, монтажник, отделочник</option><option value="drv">Водитель, курьер, перевозки</option><option value="rail">Железнодорожник, работник авиации и речного транспорта</option><option value="energy">Энергетик, нефтегаз, добыча, геолог</option></optgroup><optgroup label="Сельское и лесное хозяйство"><option value="agr">Агроном, механизатор, животновод, фермер</option><option value="forest">Лесное хозяйство, егерь, лесник</option></optgroup><optgroup label="Торговля и сфера услуг"><option value="shop">Продавец, кассир, торговля, склад</option><option value="cafe">Повар, официант, бариста, общепит</option><option value="beauty">Парикмахер, мастер красоты, массажист</option><option value="hotel">Гостиницы, туризм, гид</option><option value="clean">Клининг, ЖКХ, охрана, обслуживание</option></optgroup><optgroup label="Офис, финансы, IT, творчество"><option value="it">IT-специалист, разработчик, аналитик</option><option value="fin">Банк, финансы, бухгалтер, экономист</option><option value="law">Юрист, нотариус, адвокат</option><option value="mgr">Менеджер, администратор, секретарь, офис</option><option value="mkt">Маркетинг, реклама, дизайн, журналист, фотограф</option><option value="eng">Инженер, проектировщик, архитектор</option></optgroup><optgroup label="Свой бизнес"><option value="ip">Индивидуальный предприниматель</option><option value="self">Самозанятый, фрилансер</option><option value="biz">Руководитель, собственник бизнеса</option></optgroup><optgroup label="Не работаю"><option value="mat">В отпуске по уходу за ребёнком</option><option value="home">Домохозяйка, домохозяин</option><option value="unemp">Безработный, ищу работу</option><option value="stud">Студент, учусь очно</option><option value="pens">Пенсионер</option><option value="dis">Человек с инвалидностью, не работаю</option></optgroup><optgroup label="Другое"><option value="oth">Другая профессия (укажите ниже)</option></optgroup></select></div>
+        <div class="field"><label for="b_rur">Где живёте</label><select class="p" id="b_rur"><option value="c">Город</option><option value="v">Село, посёлок</option></select></div>
+        <div class="field"><label for="b_dis">Ребёнок с инвалидностью</label><select class="p" id="b_dis"><option value="n">Нет</option><option value="y">Да</option></select></div>
+        <div class="field"><label for="b_vet">Ветеран боевых действий или участник СВО в семье</label><select class="p" id="b_vet"><option value="n">Нет</option><option value="y">Да</option></select></div>
+        <div class="field"><label for="b_fee">Родительская плата за детский сад, ₽ в месяц</label><input class="p" id="b_fee" type="number" inputmode="decimal" placeholder="0 если не ходит"></div>
+      </div>
+      <div class="facts" id="b-facts" style="margin-top:10px"></div>
+      <p class="muted small" style="margin-top:10px">Статусы считаются по данным из вкладки «Бюджет» и «ЖКУ». Доход до НДФЛ оценивается как сумма на руки, делённая на 0,87. Это справка, а не решение органа: окончательные условия смотрите в источнике и у специалиста.</p>
+      <p class="small" id="c-status"></p>
+    </div>
+    <div class="chips" id="flt" role="group" aria-label="Фильтр мер поддержки"></div>
+    <div class="cards" id="cards"></div>
+
+    <div class="box">
+      <h2>Ипотека: сравнение платежа</h2>
+      <p class="muted small">Аннуитетный платёж по трём ставкам. Ставка 15% в третьей строке стоит для примера, подставьте предложение вашего банка.</p>
+      <div class="fgrid">
+        <div class="field"><label for="m_price">Стоимость жилья, ₽</label><input class="p" id="m_price" type="number" inputmode="decimal" value="6000000"></div>
+        <div class="field"><label for="m_down">Первоначальный взнос, %</label><input class="p" id="m_down" type="number" inputmode="decimal" value="20"></div>
+        <div class="field"><label for="m_term">Срок, лет</label><input class="p" id="m_term" type="number" inputmode="decimal" value="20"></div>
+        <div class="field"><label for="m_rate">Своя ставка, % годовых</label><input class="p" id="m_rate" type="number" inputmode="decimal" step="any" value="15"></div>
+      </div>
+      <div class="tw" style="margin-top:12px"><table style="min-width:520px">
+        <thead><tr><th>Программа</th><th>Ставка</th><th>Платёж в месяц</th><th>Переплата</th><th>Доля дохода</th></tr></thead>
+        <tbody id="m-body"></tbody>
+      </table></div>
+    </div>
+
+    <div class="box">
+      <h2>Источники</h2>
+      <ul class="src">
+        <li><a href="https://egov-buryatia.ru/rst/activities/monitoring/tariffs.php" target="_blank" rel="noopener">РСТ Бурятии: тарифы на коммунальные услуги в Улан-Удэ</a></li>
+        <li><a href="https://egov-buryatia.ru/rst/activities/monitoring/indikativnye-ceny-2026.php" target="_blank" rel="noopener">РСТ Бурятии: диапазоны потребления электроэнергии</a></li>
+        <li><a href="https://www.klerk.ru/user/2615572/711462/" target="_blank" rel="noopener">Корректировка индексов с 1 октября 2026 (распоряжение № 2633-р)</a></li>
+        <li><a href="https://rb.tgk-14.com/consumer_information/for_individuals/Tariffs_of_PJSC_TGK-14/" target="_blank" rel="noopener">ТГК-14: норматив и тариф на отопление</a></li>
+        <li><a href="https://sfr.gov.ru/branches/buryatia/news/~2026/05/15/281245" target="_blank" rel="noopener">СФР по Бурятии: единое пособие, прожиточный минимум 2026</a></li>
+        <li><a href="https://egov-buryatia.ru/minsoc/include/RUS/posobiya-i-vyplaty/vyplata-na-pervogo-rebenka/" target="_blank" rel="noopener">Минсоцзащиты Бурятии: выплата на первого ребёнка</a></li>
+        <li><a href="https://www.rbc.ru/rbcfreenews/696a7a3a9a7947fe1b409a34" target="_blank" rel="noopener">РБК: размер материнского капитала с 1 февраля 2026</a></li>
+        <li><a href="https://realty.rbc.ru/news/6937e6e49a79471b13f3caa3" target="_blank" rel="noopener">РБК: дальневосточная и арктическая ипотека</a></li>
+        <li><a href="https://lenta.ru/articles/2026/06/25/izmeneniya-v-programme-semeynoy-ipoteki-s-1-iyulya-2026-goda/" target="_blank" rel="noopener">Лента.ру: семейная ипотека, возможные изменения</a></li>
+        <li><a href="https://www.gazeta.ru/twz/dengi/programma-molodaya-semya.htm" target="_blank" rel="noopener">Газета.ру: программа «Молодая семья» в 2026 году</a></li>
+        <li><a href="https://www.nalog.gov.ru/rn26/news/smi/16639139/" target="_blank" rel="noopener">ФНС: налоговые вычеты родителям</a></li>
+        <li><a href="https://www.03bur.ru/novaia-mera-podderjki-rabotaushie-roditeli-dvyh-i-bolee-detei-imeut-pravo-na-ejegodnyu-semeinyu-vyplaty/" target="_blank" rel="noopener">СФР по Бурятии: ежегодная семейная выплата</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ИТОГИ -->
+  <section id="p-s" role="tabpanel" aria-labelledby="tab-s" class="sect" hidden>
+    <div class="sv"><button type="button" class="pill main" data-save="1">Сохранить изменения</button><span class="sst small muted" aria-live="polite">Сохраняется на этом устройстве</span><button type="button" class="pill sx" data-exp="1" hidden>Скачать копию</button><button type="button" class="pill sx" data-imp="1" hidden>Загрузить копию</button></div>
+    <div class="box"><h2>Все месяцы</h2>
+      <p class="muted small">В таблицу попадают месяцы, в которые вы вносили данные. Остаток нарастающим итогом показывает, сколько свободных денег накопилось к концу месяца.</p>
+      <div class="tw"><table style="min-width:560px"><thead><tr><th>Месяц</th><th>Доход</th><th>Расходы</th><th>из них ЖКУ</th><th>Остаток</th><th>Нарастающим</th></tr></thead><tbody id="s-body"></tbody><tfoot id="s-foot"></tfoot></table></div>
+    </div>
+    <div class="box"><h2>Остаток по месяцам</h2><div id="s-bars"></div></div>
+  </section>
+</div>
+
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var fmt=function(n){return Math.round(n).toLocaleString('ru-RU')};
+var rub=function(n){return fmt(n)+' ₽'};
+var pct=function(n,d){return n.toLocaleString('ru-RU',{maximumFractionDigits:d==null?1:d})+'%'};
+var num=function(id){var e=$(id);if(!e)return 0;var v=parseFloat(String(e.value).replace(',','.'));return isFinite(v)?v:0};
+var KEY='ud-budget-v1',DKEY='ud-budget-data-v1';
+var sel=3;
+/* Если приложение открыто как файл или установлено как .exe, впишите сюда адрес data.json на вашем сайте,
+   например 'https://имя.github.io/репозиторий/data.json'. На самом сайте оставьте пустым. */
+var REMOTE='';
+var OVR={};
+var PERIODS=[{from:'2026-01-01',to:'2026-09-30'},{from:'2026-10-01',to:'2026-12-31'}];
+var C={reviewed:'2026-10-14',pm_capita:20644,pm_child:20025,mrot8:216744,matcap1:728921.9,matcap_2add:234321.27,bur_birth1:40050,bur_regcap:83914,vychet_cap:450000,vychet_amt:1400};
+var NOTICE='';
+var DATA_INFO={origin:'builtin',updated:'2026-10-14'};
+var lastFetch=0;
+var MN=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+var MS=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+function ym(t){var y=Math.floor(t/12),m=t%12+1;return y+'-'+(m<10?'0':'')+m}
+function madd(k,n){return ym(+k.slice(0,4)*12+ +k.slice(5)-1+n)}
+function mname(k){return MN[+k.slice(5)-1]+' '+k.slice(0,4)}
+var NOW=(function(){var d=new Date();return ym(d.getFullYear()*12+d.getMonth())})();
+var OPEN={};
+var INC=['i_me','i_sp','i_oth','i_cash','i_vac','i_mat'];
+var TS=0,CDOC=null,dirty=false,syncTmr=0,LEG=null;
+var PAYS=[{id:'rent',name:'Ипотека или аренда',day:'',cat:'rent'},{id:'debt',name:'Кредиты и рассрочки',day:'',cat:'debt'},{id:'kg',name:'Детский сад',day:'',cat:'kg'},{id:'util',name:'ЖКУ',day:'',cat:'util'},{id:'comm',name:'Связь и интернет',day:'',cat:'comm'}];
+var RULES={},IMPK=[],CLOG=[],SKIP=false,LAY={o:{},c:''},LW=[];
+var MON={},CUR=NOW,START=NOW,LAST=madd(NOW,11);
+function effP(k){return sel!==3?sel:(k<PERIODS[1].from.slice(0,7)?0:1)}
+function dm(i){return i.slice(8,10)+'.'+i.slice(5,7)}
+function dfull(i){return i.slice(8,10)+'.'+i.slice(5,7)+'.'+i.slice(0,4)}
+function plabel(p){return p.from.slice(0,4)===p.to.slice(0,4)?dm(p.from)+'–'+dfull(p.to):dfull(p.from)+'–'+dfull(p.to)}
+function lab(){return {s0:plabel(PERIODS[0]),s1:plabel(PERIODS[1])}}
+function moneyDec(n){return n.toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u00A0₽'}
+
+/* ---------- данные ---------- */
+var EXP=[
+ ['rent','Ипотека или аренда жилья',25000,'need'],
+ ['food','Продукты и бытовая химия',30000,'need'],
+ ['lunch','Рабочие обеды',5000,'need'],
+ ['transport','Транспорт и топливо',8000,'need'],
+ ['comm','Связь и интернет',1800,'need'],
+ ['kg','Детский сад и кружки',3000,'need'],
+ ['child','Ребёнок: одежда, врачи, прочее',8000,'need'],
+ ['health','Здоровье и аптека',3000,'need'],
+ ['debt','Кредиты и рассрочки',0,'need'],
+ ['irreg','Нерегулярные: ОСАГО, ТО, отпуск, налоги',0,'need'],
+ ['fees','Комиссии банка',0,'need'],
+ ['cloth','Одежда и обувь',4000,'want'],
+ ['fun','Отдых и развлечения',5000,'want'],
+ ['cafe','Кафе, кофе, шаурма',4000,'want'],
+ ['digital','Подписки и цифровой контент',1500,'want'],
+ ['tobacco','Табак',0,'want'],
+ ['home','Дом и ремонт',0,'want'],
+ ['other','Прочее',5000,'want'],
+ ['xfer','Переводы людям',0,'want'],
+ ['save','Накопления и подушка',10000,'save'],
+['mp_wb','Wildberries',0,'want','mp'],['mp_ozon','Ozon',0,'want','mp'],['mp_ym','Яндекс Маркет',0,'want','mp'],['mp_other','Другие маркетплейсы',0,'want','mp'],
+['w_cloth','Одежда и обувь',0,'want','w'],['w_beauty','Красота и уход',0,'want','w'],['w_cafe','Кафе и развлечения',0,'want','w'],['w_health','Здоровье',0,'want','w'],['w_subs','Подписки и связь',0,'want','w'],['w_gifts','Подарки и хобби',0,'want','w'],['w_other','Прочее',0,'want','w']
+];
+var BASE_EXP=EXP.slice(),INC_BASE=['i_me','i_sp','i_oth','i_cash','i_vac','i_mat'];
+var CATS={},HID={};
+var INCLAB={i_me:'Моя зарплата',i_sp:'Зарплата жены',i_oth:'Пособия и прочее',i_cash:'Пополнения наличными',i_vac:'Отпускные',i_mat:'Материальная помощь'};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+var DEF_T={cold:[38.21,44.74],sewer:[46.88,54.89],hotO:[203.69,221.95],hotC:[187.00,203.51],heat:[2918.72,3172.65],el:[4.3120,4.7950],tko:[613.10,613.10]};
+var TN={cold:['Холодная вода','₽/м³'],sewer:['Водоотведение','₽/м³'],hotO:['Горячая вода, открытая система','₽/м³'],hotC:['Горячая вода, закрытая система','₽/м³'],heat:['Отопление','₽/Гкал'],el:['Электроэнергия, 1 диапазон','₽/кВт·ч'],tko:['Вывоз мусора (ТКО)','₽/м³']};
+function periodL(){var L=lab();return ['тарифы '+L.s0,'тарифы '+L.s1,'сценарий']}
+
+/* ---------- построение форм ---------- */
+var rows='',RW={main:'',mp:'',w:''};
+function rowHtml(e){
+  return '<div class="row"><div class="lb"><label for="e_'+e[0]+'">'+e[1]+'</label><button type="button" class="calc" data-ent="'+e[0]+'" aria-expanded="false" aria-label="Счётчик сумм: '+e[1]+'" title="Сложить суммы из банка">＋</button><button type="button" class="cprev" data-prev="'+e[0]+'" aria-label="Взять из прошлого месяца: '+e[1]+'" title="Взять из прошлого месяца">↶</button><button type="button" class="cdel" data-cdel="'+e[0]+'" aria-label="Удалить категорию: '+e[1]+'" title="Удалить категорию">×</button></div><input class="p m" id="e_'+e[0]+'" type="number" inputmode="decimal" min="0" step="any" value="'+e[2]+'"><span class="pc" id="pc_'+e[0]+'">0%</span><div class="ent" id="ent_'+e[0]+'" hidden></div><div class="bar"><i id="bar_'+e[0]+'"></i></div></div>';
+}
+EXP.forEach(function(e){RW[e[4]||'main']+=rowHtml(e)});
+
+rows+='<div class="row auto"><label for="e_util" id="lb_util">ЖКУ (расчёт)</label><input id="e_util" readonly tabindex="-1"><span class="pc" id="pc_util">0%</span><div class="bar"><i id="bar_util"></i></div></div>';
+var autoRow=function(id,lbl){return '<div class="row auto"><label for="e_'+id+'">'+lbl+'</label><input id="e_'+id+'" readonly tabindex="-1"><span class="pc" id="pc_'+id+'">0%</span><div class="bar"><i id="bar_'+id+'"></i></div></div>'};
+$('exp-rows').innerHTML=RW.main+rows+autoRow('mpsum','Маркетплейсы (итог блока ниже)')+autoRow('wsum','Расходы жены (итог вкладки «Расходы жены»)');
+$('mp-rows').innerHTML=RW.mp;$('w-rows').innerHTML=RW.w;
+
+var te='';
+Object.keys(DEF_T).forEach(function(k){
+  te+='<div class="trow"><label for="t_'+k+'_0">'+TN[k][0]+', '+TN[k][1]+'</label><input class="tp" id="t_'+k+'_0" type="number" step="any" value="'+DEF_T[k][0]+'"><input class="tp" id="t_'+k+'_1" type="number" step="any" value="'+DEF_T[k][1]+'"></div>';
+});
+$('t-edit').innerHTML=te;
+
+/* ---------- месяцы и сохранение ---------- */
+var FIDS=['f_tgk','f_vod','f_el','f_zhks','f_dom','f_kap','f_eko'];
+var SIDS=['s_cold','s_sew','s_heat','s_hot'];
+var FACT={};FIDS.concat(SIDS).concat(['e_util_fact','i_cash','i_vac','i_mat']).forEach(function(id){FACT[id]=1});
+var MF={};['i_me','i_sp','i_oth','i_cash','i_vac','i_mat','u_cold','u_hot','u_kwh','u_norm','e_util_fact'].concat(FIDS).concat(SIDS).concat(EXP.map(function(e){return 'e_'+e[0]})).forEach(function(id){MF[id]=1});
+EXP.forEach(function(e){$('e_'+e[0]).classList.add('m')});
+var DEFV={};Object.keys(MF).forEach(function(id){DEFV[id]=$(id).defaultValue});
+/* суммы из личного кабинета на 14.10.2026 относятся к октябрю 2026, в другие месяцы они не переносятся */
+function fb(id,k){return FACT[id]?(k==='2026-10'?DEFV[id]:''):DEFV[id]}
+function factOf(k){var s=0;FIDS.forEach(function(id){s+=g(id,k)});return s>0?s:g('e_util_fact',k)}
+function readM(){var o={};Object.keys(MF).forEach(function(id){o[id]=$(id).value});return o}
+function syncCur(){if(!CUR)return;var o0=MON[CUR]||{},cur=readM();Object.keys(o0).forEach(function(k){if(!(k in MF))cur[k]=o0[k]});MON[CUR]=cur}
+function fillM(k){var v=MON[k]||{};Object.keys(MF).forEach(function(id){$(id).value=v[id]!==undefined?v[id]:fb(id,k)});applyEnt()}
+function prevKey(k){var best='';Object.keys(MON).forEach(function(x){if(x<k&&x>best)best=x});return best}
+function mkMonth(k){var p=prevKey(k),o={};Object.keys(MF).forEach(function(id){var v=FACT[id]?fb(id,k):(p?MON[p][id]:DEFV[id]);o[id]=v===undefined?fb(id,k):v});return o}
+var STMT={id:'stmt-2026-10-14',month:'2026-10',ent:{"cafe":[179.0,289.0,179.0,490.0,470.0,179.0,248.0,179.0,139.0,179.0,179.0,179.0,100.0,100.0,100.0,100.0,620.0],"xfer":[100.0,2200.0,400.0,330.0],"digital":[199.0,990.0,199.0,120.0,250.0],"transport":[847.56,847.56,200.0,150.0,847.56],"food":[2100.0,440.06,273.28,1343.52,810.0,522.92,1000.0,892.28,1212.9,500.0,143.0,420.0,124.99,2389.77,1145.5],"lunch":[100.0,380.0,395.0,70.0,420.0,470.0,420.0],"child":[3141.4,862.0,3483.25],"tobacco":[950.0],"home":[109.0],"comm":[100.0,125.0],"fees":[93.08]},inc:{i_cash:5000}};
+var IMPD=[];
+STMT.keys=["14.10.2026 07:36|-179|Кофе|2957#1","14.10.2026 07:34|-100|Ринчин Виссарионович П.|#1","14.10.2026 07:17|-289|ShaurmealsMulti|2957#1","13.10.2026 15:50|-199|IVI|#1","13.10.2026 05:16|-847.56|Яндекс.Заправки|2957#1","13.10.2026 04:53|2135.24|Между своими счетами|#1","12.10.2026 13:41|-2100|SP_Овощи фрукты_SBP|#1","12.10.2026 08:42|-100|Столовая|2957#1","12.10.2026 08:38|-179|Кофе|2957#1","11.10.2026 13:15|-3141.4|Детский мир|2957#1","11.10.2026 07:19|-490|Coffee Moose|2957#1","11.10.2026 06:51|-862|RICH FEMILI GIPERMARKE|2957#1","10.10.2026 14:51|-440.06|OOO \"MERKURIY\"|2957#1","10.10.2026 14:46|-273.28|Абсолют|2957#1","10.10.2026 14:38|-50|Святослав Игоревич Б.|#1","10.10.2026 11:36|-836|Святослав Игоревич Б.|#1","10.10.2026 09:35|-990|Яндекс.Плюс|2957#1","09.10.2026 14:03|-1343.52|Абсолют|2957#1","09.10.2026 13:26|-470|NI STYDA NI SAKHARA|2957#1","09.10.2026 13:18|-810|POLYANA.SAKHYANOVA|2957#1","09.10.2026 12:56|-522.92|Янта|2957#1","09.10.2026 07:08|-179|Кофе|2957#1","09.10.2026 06:53|-248|Shaurmeals|2957#1","08.10.2026 16:38|-199|IVI|#1","08.10.2026 13:11|-1000|Овощи и фрукты|2957#1","08.10.2026 10:28|-179|Кофе|2957#1","08.10.2026 07:42|-380|Столовая|2957#1","07.10.2026 13:53|-892.28|Абсолют|2957#1","07.10.2026 11:35|-139|Кофе|2957#1","07.10.2026 11:33|-179|Кофе|2957#1","07.10.2026 07:36|-395|Столовая|2957#1","07.10.2026 05:36|-2200|Екатерина Андреевна Б.|#1","06.10.2026 12:38|-179|Кофе|2957#1","06.10.2026 07:02|-179|Кофе|2957#1","06.10.2026 07:01|-70|Столовая|2957#1","06.10.2026 06:10|-120|ROBOKASSA_DIGITALGOODS|#1","06.10.2026 05:03|-847.56|Яндекс.Заправки|2957#1","05.10.2026 14:23|-1212.9|Абсолют|2957#1","05.10.2026 14:06|-500|Овощи и фрукты|2957#1","05.10.2026 07:56|-400|Арюна Валентиновна Ц.|#1","05.10.2026 07:32|-420|Столовая|2957#1","05.10.2026 05:14|-950|IP GITSEVICH E.E.|2957#1","04.10.2026 13:23|-109|18178_ULU_PIEOPLE_PARK|2957#1","04.10.2026 11:06|-330|Екатерина Андреевна Б.|#1","03.10.2026 14:30|-100|IP MUSAEV|2957#1","03.10.2026 14:29|-100|IP MUSAEV|2957#1","03.10.2026 14:28|-100|IP MUSAEV|2957#1","03.10.2026 14:28|-100|IP MUSAEV|2957#2","03.10.2026 14:25|-143|Fix Price|2957#1","03.10.2026 12:38|-420|Goryachaya samsa|2957#1","03.10.2026 12:33|-620|RED CUP|2957#1","03.10.2026 11:06|-124.99|Абсолют|0997#1","03.10.2026 10:50|-2389.77|Абсолют|0997#1","03.10.2026 10:45|-2500|Между своими счетами|#1","03.10.2026 09:45|-200|Автомойка|0997#1","03.10.2026 09:37|-150|Автомойка|0997#1","03.10.2026 09:30|-500|Между своими счетами|#1","02.10.2026 14:02|-250|IP NEVYANCEVA I V|2957#1","02.10.2026 13:59|-1145.5|Fix Price|2957#1","02.10.2026 13:42|-3483.25|Детский мир|2957#1","02.10.2026 08:46|-470|Столовая|2957#1","02.10.2026 04:50|-100|МТС Mobile|#1","01.10.2026 11:54|-125|МегаФон|#1","01.10.2026 09:53|-450|Святослав Игоревич Б.|#1","01.10.2026 08:50|-5200|Т-Банк|2957#1","01.10.2026 08:50|-5200|Т-Банк|2957|fee#1","01.10.2026 08:48|-5300|Святослав Игоревич Б.|#1","01.10.2026 08:47|5000|ATM 60019789|2957#1","01.10.2026 07:32|-420|Столовая|2957#1","01.10.2026 05:45|-847.56|Яндекс.Заправки|2957#1"];
+function applyImports(){
+  if(IMPD.indexOf(STMT.id)>=0)return;
+  STMT.keys.forEach(function(k){if(IMPK.indexOf(k)<0)IMPK.push(k)});
+  if(START>STMT.month)START=STMT.month;
+  var m=MON[STMT.month]||(MON[STMT.month]=mkMonth(STMT.month));
+  m.ent=m.ent||{};
+  Object.keys(STMT.ent).forEach(function(id){
+    m.ent[id]=STMT.ent[id].slice();
+    m['e_'+id]=String(Math.round(STMT.ent[id].reduce(function(a,b){return a+b},0)*100)/100);
+  });
+  Object.keys(STMT.inc).forEach(function(id){m[id]=String(STMT.inc[id])});
+  m._t=1;IMPD.push(STMT.id);
+}
+function stateObj(){
+  syncCur();
+  var o={sel:sel,ovr:OVR,start:START,last:LAST,mon:MON,imp:IMPD,pays:PAYS,rules:RULES,impk:IMPK,cats:CATS,hid:HID,clog:CLOG,lay:LAY,ts:TS};
+  document.querySelectorAll('.p:not(.m)').forEach(function(e){o[e.id]=e.value});
+  return o;
+}
+function save(){
+  TS=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(stateObj()))}catch(x){}
+  afterSave();
+}
+function load(){
+  var o=null;
+  try{o=JSON.parse(localStorage.getItem(KEY)||'null')}catch(x){}
+  TS=(o&&o.ts)||0;
+  if(o){
+    try{
+      document.querySelectorAll('.p:not(.m)').forEach(function(e){if(o[e.id]!==undefined)e.value=o[e.id]});
+      if(o.start)START=o.start;
+      if(o.last)LAST=o.last;
+      if(o.ovr){OVR=o.ovr;Object.keys(OVR).forEach(function(id){var e=$(id);if(e)e.value=OVR[id]})}
+      if(o.imp)IMPD=o.imp;
+      if(o.cats)CATS=o.cats;if(o.hid)HID=o.hid;
+      if(o.pays)PAYS=o.pays;if(o.rules)RULES=o.rules;if(o.impk)IMPK=o.impk;if(o.clog)CLOG=o.clog;if(o.lay)LAY=o.lay;
+      if(o.mon){MON=o.mon;if(o.sel!==undefined)sel=o.sel}
+      else{
+        var leg={},any=false;
+        Object.keys(MF).forEach(function(id){if(o[id]!==undefined){leg[id]=o[id];any=true}else leg[id]=DEFV[id]});
+        if(any){leg._t=1;MON[START]=leg}
+      }
+    }catch(x){}
+  }
+  rebuildCats();renderAddForms();
+  applyImports();
+  if(LAST<NOW)LAST=NOW;
+  CUR=NOW<START?START:NOW;
+  if(!MON[CUR])MON[CUR]=mkMonth(CUR);
+  fillM(CUR);
+  ensureBase();
+}
+load();
+/* ---------- карты: автоматическое списание остатков ---------- */
+var CARDS={vtb:['bal_vtb','Карта ВТБ'],alfa:['bal_alfa','Карта Альфа Банк'],oth:['bal','Другие счета и наличные']},PFMSG='';
+function totBal(){return num('bal_vtb')+num('bal_alfa')+num('bal')}
+function anyBal(){return ['bal_vtb','bal_alfa','bal'].some(function(id){return $(id).value!==''})}
+function acctIds(){return EXP.map(function(e){return 'e_'+e[0]}).concat(INC).concat(FIDS).concat(['e_util_fact'])}
+function mval(m,id,k){var v=m[id];if(v===undefined)v=fb(id,k);var x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0}
+function baseMonth(k){var m=MON[k];if(!m)return;m._z={};var a={};acctIds().forEach(function(id){a[id]=mval(m,id,k)});m._a=a}
+function ensureBase(){syncCur();Object.keys(MON).forEach(function(k){if(!MON[k]._a)baseMonth(k)})}
+function rebaseAll(){syncCur();Object.keys(MON).forEach(baseMonth)}
+function idLabel(id){var l=document.querySelector('label[for="'+id+'"]');return l?l.textContent.replace(/,?\s*₽\s*$/,'').replace(/\s*\(.*$/,''):id}
+function applyCard(card,d,label){
+  if(card==='none'||!CARDS[card])return;
+  var id=CARDS[card][0],el=$(id);
+  if(!el||el.value===''){PFMSG=CARDS[card][1]+': остаток не указан, списание пропущено. Впишите остаток на вкладке «Платежи».';return}
+  PFMSG='';
+  el.value=String(r2(num(id)+d));
+  var t=new Date();
+  CLOG.unshift(('0'+t.getDate()).slice(-2)+'.'+('0'+(t.getMonth()+1)).slice(-2)+' '+hm(t.getTime())+'|'+card+'|'+r2(d)+'|'+label);
+  CLOG=CLOG.slice(0,12);
+}
+function acct(){
+  if(SKIP||!CUR)return;
+  syncCur();var m=MON[CUR];
+  if(!m._a){baseMonth(CUR);return}
+  var card=$('pay_from').value,parts=[];
+  acctIds().forEach(function(id){
+    var cur=num(id),old=m._a[id];
+    if(old===undefined){m._a[id]=cur;return}
+    m._z=m._z||{};
+    if(!m._z[id]&&Math.abs(cur-old)>=0.005){m._z[id]=1;if(Math.abs(old-mval({},id,CUR))<0.005&&INC.indexOf(id)<0)old=0}
+    var d=cur-old;if(Math.abs(d)<0.005)return;
+    m._a[id]=cur;
+    parts.push({id:id,d:INC.indexOf(id)>=0?d:-d});
+  });
+  parts.forEach(function(p){applyCard(card,p.d,idLabel(p.id))});
+}
+function renderCardInfo(){
+  var s=$('pay_from').value;
+  document.querySelectorAll('[data-pf]').forEach(function(e){e.value=s});
+  var sum=Object.keys(CARDS).filter(function(k){return $(CARDS[k][0]).value!==''}).map(function(k){return CARDS[k][1]+' '+rub(num(CARDS[k][0]))}).join(', ');
+  document.querySelectorAll('[data-pfsum]').forEach(function(e){e.textContent=PFMSG||(s==='none'?'Автосписание выключено.':(sum?'Остатки: '+sum+'.':'Укажите остатки на вкладке «Платежи».'))});
+  var lg=$('clog');if(!lg)return;
+  lg.innerHTML=CLOG.length?'<p class="small muted" style="margin:10px 0 4px">Последние автоматические изменения остатков:</p><ul class="small" style="margin:0;padding-left:18px">'+CLOG.map(function(x){var p=x.split('|'),d=+p[2];return '<li>'+esc(p[0])+' · '+(CARDS[p[1]]?CARDS[p[1]][1]:esc(p[1]))+' · <b class="'+(d<0?'warn':'good')+'">'+(d<0?'−':'+')+rub(Math.abs(d))+'</b> · '+esc(p[3]||'')+'</li>'}).join('')+'</ul>':'';
+}
+/* ---------- раскладка: перетаскиваемые и сворачиваемые блоки ---------- */
+function layBlocks(sec){return LW.filter(function(w){return w.sec===sec})}
+function laySave(){
+  var o={};
+  document.querySelectorAll('section.sect').forEach(function(sec){
+    var ids=[];Array.prototype.forEach.call(sec.children,function(el){if(el.dataset&&el.dataset.wid)ids.push(el.dataset.wid)});
+    if(ids.length)o[sec.id]=ids.join(',');
+  });
+  LAY.o=o;
+  LAY.c=LW.filter(function(w){return w.el.classList.contains('wcol')}).map(function(w){return w.id}).join(',');
+  save();
+}
+function layApply(){
+  var col=(LAY.c||'').split(',');
+  document.querySelectorAll('section.sect').forEach(function(sec){
+    var bl=layBlocks(sec);if(!bl.length)return;
+    var want=((LAY.o&&LAY.o[sec.id])||'').split(',').filter(Boolean),ord=[];
+    want.forEach(function(id){bl.forEach(function(w){if(w.id===id&&ord.indexOf(w)<0)ord.push(w)})});
+    bl.forEach(function(w){if(ord.indexOf(w)<0)ord.push(w)});
+    bl.forEach(function(w,i){w.ph.parentNode.insertBefore(ord[i].el,w.ph)});
+  });
+  LW.forEach(function(w){w.el.classList.toggle('wcol',col.indexOf(w.id)>=0)});
+}
+function layInit(){
+  document.querySelectorAll('section.sect').forEach(function(sec){
+    Array.prototype.slice.call(sec.querySelectorAll(':scope > .grid2')).forEach(function(g){while(g.firstChild)sec.insertBefore(g.firstChild,g);g.remove()});
+    var n=0;
+    Array.prototype.slice.call(sec.children).forEach(function(el){
+      if(!el.classList.contains('box'))return;
+      var h=el.querySelector('h2');if(!h)return;
+      var id=sec.id+'.'+(n++),ph=document.createComment('w');
+      sec.insertBefore(ph,el);el.dataset.wid=id;
+      var hd=h.parentNode!==el&&h.parentNode.parentNode===el?h.parentNode:h;hd.classList.add('wh');
+      var bar=document.createElement('div');bar.className='wbar';
+      bar.innerHTML='<button type="button" class="wb wgrip" title="Перетащить блок" aria-label="Перетащить блок"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="5.5" cy="3.5" r="1.35"/><circle cx="10.5" cy="3.5" r="1.35"/><circle cx="5.5" cy="8" r="1.35"/><circle cx="10.5" cy="8" r="1.35"/><circle cx="5.5" cy="12.5" r="1.35"/><circle cx="10.5" cy="12.5" r="1.35"/></svg></button><button type="button" class="wb wup" title="Выше" aria-label="Выше"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.6 7.2 8 2.8l4.4 4.4"/></svg></button><button type="button" class="wb wdn" title="Ниже" aria-label="Ниже"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.6 8.8 8 13.2l4.4-4.4"/></svg></button><button type="button" class="wb wtg" title="Свернуть или развернуть" aria-label="Свернуть или развернуть" aria-expanded="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.8 6l4.2 4.2L12.2 6"/></svg></button>';
+      var wr=document.createElement('div');wr.className='whead';el.insertBefore(wr,hd);wr.appendChild(hd);wr.appendChild(bar);
+      LW.push({el:el,id:id,sec:sec,ph:ph});
+    });
+    if(!layBlocks(sec).length)return;
+    var tl=document.createElement('div');tl.className='ltools';
+    tl.innerHTML='<button type="button" class="pill" data-lall="1">Свернуть все</button><button type="button" class="pill" data-lall="0">Развернуть все</button><button type="button" class="pill" data-lreset="1">Сбросить порядок</button><span class="small muted">Блоки можно переносить за ⠿ или кнопками ↑ ↓. Порядок один для всех месяцев.</span>';
+    tl.dataset.sec=sec.id;sec.insertBefore(tl,sec.firstChild);
+  });
+  layApply();
+  document.addEventListener('click',function(e){
+    var t=e.target.closest?e.target.closest('.wb,[data-lall],[data-lreset]'):null;if(!t)return;
+    var el=t.closest('.box'),sec=t.closest('section.sect');
+    if(t.dataset.lall!==undefined){layBlocks(sec).forEach(function(w){w.el.classList.toggle('wcol',t.dataset.lall==='1')});laySave();return}
+    if(t.dataset.lreset!==undefined){LAY.o={};layApply();layBlocks(sec).forEach(function(w){w.el.classList.remove('wcol')});laySave();return}
+    if(!el||!sec)return;
+    if(t.classList.contains('wtg')){el.classList.toggle('wcol');t.setAttribute('aria-expanded',el.classList.contains('wcol')?'false':'true');laySave();return}
+    var sib=Array.prototype.filter.call(sec.children,function(x){return x.dataset&&x.dataset.wid});
+    var i=sib.indexOf(el);
+    if(t.classList.contains('wup')&&i>0){sec.insertBefore(el,sib[i-1]);laySave();el.scrollIntoView({block:'nearest'})}
+    if(t.classList.contains('wdn')&&i>=0&&i<sib.length-1){sec.insertBefore(sib[i+1],el);laySave();el.scrollIntoView({block:'nearest'})}
+  });
+  document.addEventListener('pointerdown',function(e){
+    var g=e.target.closest?e.target.closest('.wgrip'):null;if(!g)return;
+    var el=g.closest('.box'),sec=g.closest('section.sect');if(!el||!sec)return;
+    e.preventDefault();el.classList.add('wdrag');
+    function mv(ev){
+      var y=ev.clientY;
+      if(y<70)window.scrollBy(0,-14);else if(y>window.innerHeight-70)window.scrollBy(0,14);
+      var sib=Array.prototype.filter.call(sec.children,function(x){return x.dataset&&x.dataset.wid&&x!==el});
+      for(var i=0;i<sib.length;i++){
+        var r=sib[i].getBoundingClientRect();
+        if(y>=r.top&&y<=r.bottom){
+          var ref=y<r.top+r.height/2?sib[i]:sib[i].nextSibling;if(ref!==el&&ref!==el.nextSibling)sec.insertBefore(el,ref);
+          break;
+        }
+      }
+    }
+    function up(){
+      document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);
+      el.classList.remove('wdrag');laySave();
+    }
+    document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+  });
+}
+/* ---------- счётчик сумм по категориям ---------- */
+function r2(n){return Math.round(n*100)/100}
+function evalExpr(t){
+  var x=String(t).replace(/,/g,'.').replace(/[×xх*]/gi,'*').replace(/[÷:]/g,'/').replace(/\s+/g,'');
+  if(!x||!/^[\d.+\-*\/()]+$/.test(x))return NaN;
+  try{var v=Function('"use strict";return ('+x+')')();return isFinite(v)?r2(v):NaN}catch(e){return NaN}
+}
+function entList(id){var m=MON[CUR];return m&&m.ent&&m.ent[id]?m.ent[id]:[]}
+function inpId(k){return k.indexOf('i_')===0?k:'e_'+k}
+function renderEnt(id){
+  var box=$('ent_'+id),btn=document.querySelector('[data-ent="'+id+'"]'),a=entList(id);
+  var sum=a.reduce(function(s,v){return s+v},0);
+  btn.setAttribute('aria-expanded',String(!!OPEN[id]));
+  btn.textContent=a.length?a.length+' ＋':'＋';
+  box.hidden=!OPEN[id];
+  $(inpId(id)).readOnly=a.length>0;
+  if(!OPEN[id])return;
+  var h='<div class="ents">'+(a.length?a.map(function(v,i){return '<span class="ch">'+v.toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽<button type="button" data-del="'+id+':'+i+'" aria-label="Удалить сумму">×</button></span>'}).join(''):'<span class="small muted">Пока пусто. Введите сумму и нажмите «Добавить».</span>')+'</div>'
+   +'<div class="addr"><input type="text" inputmode="decimal" autocomplete="off" id="in_'+id+'" placeholder="Сумма, например 350" aria-label="Новая сумма"><button type="button" class="pill" data-add="'+id+'">Добавить</button></div>'
+   +'<div class="tot"><span>Итого: <b>'+rub(sum)+'</b> ('+a.length+' шт.)</span>'+(a.length?'<button type="button" class="lnk" data-clr="'+id+'" style="background:none;border:0;color:var(--accent);text-decoration:underline;font:inherit;cursor:pointer;padding:0">Очистить</button>':'')+'</div>';
+  box.innerHTML=h;
+}
+function applyEnt(){EXP.forEach(function(e){renderEnt(e[0])});INC.forEach(renderEnt)}
+function entCommit(id){
+  var a=entList(id);
+  if(a.length)$(inpId(id)).value=String(r2(a.reduce(function(s,v){return s+v},0)));
+  var nt=!(MON[CUR]&&MON[CUR]._t);
+  syncCur();MON[CUR]._t=1;acct();save();if(nt)renderMonths(false);
+  renderEnt(id);update();
+}
+function entAdd(id){
+  var inp=$('in_'+id),v=evalExpr(inp.value);
+  if(!isFinite(v)||v===0){inp.focus();inp.setCustomValidity&&0;inp.placeholder='Введите число, например 350';inp.value='';return}
+  syncCur();
+  var m=MON[CUR];m.ent=m.ent||{};m.ent[id]=(m.ent[id]||[]).concat([v]);
+  entCommit(id);
+  var n=$('in_'+id);if(n)n.focus();
+}
+function entDel(id,i){syncCur();var a=entList(id).slice();a.splice(i,1);MON[CUR].ent[id]=a;if(!a.length)delete MON[CUR].ent[id];entCommit(id)}
+function entClr(id){syncCur();if(MON[CUR].ent)delete MON[CUR].ent[id];entCommit(id)}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&e.target.id&&e.target.id.indexOf('in_')===0){e.preventDefault();entAdd(e.target.id.slice(3))}
+});
+/* ---------- сохранение и синхронизация между устройствами ---------- */
+function hm(ts){var d=new Date(ts);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+function setSt(t,cls){document.querySelectorAll('.sst').forEach(function(e){e.textContent=t;e.className='sst small '+(cls||'muted')})}
+function afterSave(){
+  if(CDOC){
+    dirty=true;setSt('Есть несохранённые изменения, они сохранятся сами через пару секунд.','warn');
+    clearTimeout(syncTmr);syncTmr=setTimeout(pushCloud,2500);
+  }else setSt('Сохранено на этом устройстве в '+hm(TS)+'.','muted');
+}
+var BASE=null,RTS=0;
+function isPrim(x){return x===null||typeof x!=='object'}
+function m3(b,l,r){
+  var js=JSON.stringify;
+  if(js(l)===js(b))return r;
+  if(js(r)===js(b))return l;
+  var isO=function(x){return x&&typeof x==='object'&&!Array.isArray(x)};
+  if(isO(l)&&isO(r)){
+    var o={},bb=isO(b)?b:{};
+    Object.keys(l).concat(Object.keys(r)).forEach(function(k){
+      if(k in o)return;
+      var inL=k in l,inR=k in r;
+      if(inL&&inR)o[k]=m3(bb[k],l[k],r[k]);
+      else if(inL){if(!(k in bb&&js(l[k])===js(bb[k])))o[k]=l[k]}
+      else{if(!(k in bb&&js(r[k])===js(bb[k])))o[k]=r[k]}
+    });
+    return o;
+  }
+  if(Array.isArray(l)&&Array.isArray(r)&&l.every(isPrim)&&r.every(isPrim)){
+    var res=r.slice(),add=l.slice();
+    (Array.isArray(b)?b:[]).forEach(function(x){
+      var i=add.indexOf(x);
+      if(i>=0)add.splice(i,1);
+      else{var j=res.indexOf(x);if(j>=0)res.splice(j,1)}
+    });
+    return res.concat(add);
+  }
+  return l;
+}
+function mergeStates(base,l,r){
+  var mg=m3(base,l,r);
+  Object.keys(mg.mon||{}).forEach(function(k){
+    var m=mg.mon[k];
+    Object.keys(m.ent||{}).forEach(function(id){
+      if(m.ent[id]&&m.ent[id].length)m[inpId(id)]=String(r2(m.ent[id].reduce(function(a,b){return a+b},0)));
+    });
+  });
+  mg.ts=Date.now();
+  return mg;
+}
+function pushCloud(){
+  if(!CDOC)return;
+  clearTimeout(syncTmr);
+  if(!TS)TS=Date.now();
+  setSt('Сохраняю…','muted');
+  CDOC.get().then(function(sn){
+    var d=sn&&sn.exists?sn.data():null,merged=false;
+    if(d&&d.json&&d.ts>RTS&&BASE){
+      try{applyRemote(mergeStates(JSON.parse(BASE),stateObj(),JSON.parse(d.json)));merged=true}catch(e){}
+    }
+    var o=stateObj();
+    return CDOC.set({ts:o.ts,json:JSON.stringify(o)}).then(function(){
+      RTS=o.ts;BASE=JSON.stringify(o);dirty=false;
+      setSt(merged?'Сохранено в '+hm(Date.now())+'. Правки с другого устройства объединены с вашими.':'Сохранено в '+hm(Date.now())+'. На других устройствах откроется так же.','good');
+    });
+  }).catch(function(e){
+    setSt('Не удалось сохранить в облаке ('+((e&&e.code)||'ошибка')+'). Данные сохранены на этом устройстве.','warn');
+  });
+}
+function forceSave(){
+  if(CDOC){save();pushCloud()}
+  else{save();setSt('Сохранено на этом устройстве в '+hm(TS)+'.','good')}
+}
+function applyRemote(o){
+  var oldOvr=OVR;
+  MON=o.mon||{};OVR=o.ovr||{};IMPD=o.imp||[];
+  CATS=o.cats||{};HID=o.hid||{};rebuildCats();renderAddForms();$('pay-new-cat').innerHTML=payCats();
+  if(o.pays)PAYS=o.pays;RULES=o.rules||{};IMPK=o.impk||[];CLOG=o.clog||[];if(o.lay){LAY=o.lay;layApply()}
+  if(o.start)START=o.start;if(o.last)LAST=o.last;if(o.sel!==undefined)sel=o.sel;
+  document.querySelectorAll('.p:not(.m)').forEach(function(e){if(o[e.id]!==undefined)e.value=o[e.id]});
+  Object.keys(oldOvr).forEach(function(id){if(!(id in OVR)){var m=/^t_(\w+)_(\d)$/.exec(id);if(m&&DEF_T[m[1]]&&$(id))$(id).value=DEF_T[m[1]][+m[2]]}});
+  Object.keys(OVR).forEach(function(id){var e=$(id);if(e)e.value=OVR[id]});
+  if(LAST<NOW)LAST=NOW;
+  if(CUR<START||CUR>LAST||!MON[CUR]){CUR=NOW<START?START:NOW}
+  if(!MON[CUR])MON[CUR]=mkMonth(CUR);
+  TS=o.ts||Date.now();
+  fillM(CUR);ensureBase();
+  try{localStorage.setItem(KEY,JSON.stringify(stateObj()))}catch(x){}
+  renderMonths(true);update();
+}
+var firstSnap=true;
+function onCloudDoc(snap){
+  if(snap.metadata&&snap.metadata.hasPendingWrites)return;
+  var d=snap.exists?snap.data():null;
+  if(!d||!d.json){
+    if(firstSnap){
+      firstSnap=false;
+      if(LEG){LEG.get().then(function(sn){
+        var ld=sn.exists?sn.data():null;
+        if(ld&&ld.json&&ld.ts>TS){try{applyRemote(JSON.parse(ld.json));TS=ld.ts}catch(e){}}
+        pushCloud();
+      }).catch(function(){pushCloud()})}else pushCloud();
+    }
+    return;
+  }
+  firstSnap=false;
+  if(d.ts>TS&&!dirty){
+    try{applyRemote(JSON.parse(d.json));RTS=d.ts;BASE=d.json;setSt('Данные обновлены с другого устройства, версия от '+hm(d.ts)+'.','good')}catch(e){}
+  }else if(d.ts>TS&&dirty){
+    pushCloud();
+  }else if(d.ts<TS&&!dirty){
+    pushCloud();
+  }else if(d.ts===TS){
+    if(!BASE){BASE=d.json;RTS=d.ts}
+    setSt('Сохранено в облаке. Данные совпадают на всех устройствах.','good');
+  }
+}
+function showExport(){document.querySelectorAll('.sx').forEach(function(e){e.hidden=false});setSt('Сохраняется на этом устройстве. Между устройствами переносите данные кнопками «Скачать копию» и «Загрузить копию».','muted')}
+function initCloud(){
+  if(!(window.claude&&claude.use)){showExport();return}
+  claude.use('sample').then(function(sm){if(sm){$('btn-photo').hidden=false;$('btn-eirc').hidden=false;$('eirc-note').textContent='Откройте личный кабинет ЕИРЦ, сделайте скриншоты с начислениями и показателями (можно до 6 штук) и добавьте их. Я распознаю суммы по поставщикам и расход воды, электричества и отопления, а вы проверите и внесёте их в выбранный месяц.'}}).catch(function(){});
+  Promise.all([claude.use('user'),claude.use('db')]).then(function(r){
+    var u=r[0],db=r[1];
+    if(!u||!db){showExport();return}
+    return u.id().then(function(id){
+      if(!id){showExport();return}
+      CDOC=db.doc('family/budget_state');LEG=db.doc('data/users/'+id+'/budget_state');
+      setSt('Подключаю облако…','muted');
+      CDOC.onSnapshot(onCloudDoc,function(e){CDOC=null;showExport();setSt('Облако недоступно ('+((e&&e.code)||'ошибка')+'). Данные сохраняются на этом устройстве.','warn')});
+    });
+  }).catch(function(){showExport()});
+}
+function exportFile(){
+  if(window.claude&&claude.use){
+    claude.use('downloads').then(function(d){
+      if(!d){setSt('Скачивание недоступно в этом окне.','warn');return}
+      return d.save({filename:'moi-raskhody-kopiya-'+new Date().toISOString().slice(0,10)+'.json',data:JSON.stringify(stateObj())}).then(function(){setSt('Копия сохранена.','good')}).catch(function(e){setSt('Копия не сохранена ('+((e&&e.code)||'ошибка')+').','warn')});
+    });
+    return;
+  }
+  var o=stateObj(),blob=new Blob([JSON.stringify(o)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='moi-raskhody-kopiya-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+}
+function importFile(f){
+  var r=new FileReader();
+  r.onload=function(){
+    try{var o=JSON.parse(r.result);if(!o||!o.mon)throw 0;o.ts=Date.now();applyRemote(o);setSt('Копия загружена и сохранена на этом устройстве.','good')}
+    catch(e){setSt('Файл не похож на копию данных этого приложения.','warn')}
+  };
+  r.readAsText(f);
+}
+(function(){var f=document.createElement('input');f.type='file';f.accept='.json,application/json';f.id='imp-file';f.hidden=true;f.addEventListener('change',function(){if(f.files[0])importFile(f.files[0]);f.value=''});document.body.appendChild(f)})();
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&dirty&&CDOC)pushCloud()});
+/* ---------- платежи ---------- */
+function payAmt(p,k){return p.cat==='util'?moTot(k).util:g('e_'+p.cat,k)}
+function payCats(){var h='<option value="util">ЖКУ</option>';EXP.forEach(function(e){if(!e[4])h+='<option value="'+e[0]+'">'+e[1]+'</option>'});return h}
+function dueDate(day,t0,off){var y=t0.getFullYear(),mo=t0.getMonth()+off,last=new Date(y,mo+1,0).getDate();return new Date(y,mo,Math.min(day,last))}
+var PAYHTML='';
+function renderPays(){
+  var k=CUR,paid=(MON[k]&&MON[k].paid)||{},td=new Date().getDate(),isNow=(k===NOW);
+  var list=PAYS.map(function(p,i){return {p:p,i:i}}).sort(function(a,b){return (+a.p.day||99)-(+b.p.day||99)});
+  var h='',tot=0,un=0;
+  list.forEach(function(x){
+    var p=x.p,a=payAmt(p,k),isPaid=!!paid[p.id],d=+p.day,st='<span class="muted">дата не задана</span>';
+    tot+=a;if(!isPaid)un+=a;
+    if(isPaid)st='<span class="st-ok">оплачено</span>';
+    else if(d&&isNow&&d<td)st='<span class="st-bad">срок прошёл</span>';
+    else if(d&&isNow&&d-td<=3)st='<span class="st-warn">скоро</span>';
+    else if(d)st='<span class="muted">ждёт</span>';
+    h+='<tr><td>'+p.name+'<div class="small muted">'+(p.cat==='util'?'ЖКУ':(EXP.filter(function(e){return e[0]===p.cat})[0]||[0,p.cat])[1])+'</div></td><td><input type="number" min="1" max="31" inputmode="numeric" data-pday="'+p.id+'" value="'+(p.day||'')+'" aria-label="День месяца"></td><td class="a">'+rub(a)+'</td><td>'+st+'</td><td><input type="checkbox" data-ppaid="'+p.id+'"'+(isPaid?' checked':'')+' aria-label="Оплачено"></td><td><button type="button" class="lnk" data-pdel="'+p.id+'" style="background:none;border:0;color:var(--muted);cursor:pointer" aria-label="Удалить платёж">×</button></td></tr>';
+  });
+  var ph=h||'<tr><td colspan="6" class="muted">Платежей нет.</td></tr>';
+  if(ph!==PAYHTML){PAYHTML=ph;$('pay-list').innerHTML=ph}
+  $('pay-foot').innerHTML='<tr><td>Всего за месяц</td><td></td><td class="a">'+rub(tot)+'</td><td colspan="3" class="small muted">Осталось оплатить: <b>'+rub(un)+'</b></td></tr>';
+  $('pay-h').textContent='Платежи · '+mname(k);
+  var sc=$('pay-new-cat');if(!sc.options.length)sc.innerHTML=payCats();
+}
+function dailyUpdate(){
+  var v=$('k_day'),d=$('k_day_d'),d1=num('pay_d1'),d2=num('pay_d2'),bal=anyBal()?'x':'';
+  v.className='v';
+  if(!(d1>=1||d2>=1)){v.textContent='—';d.textContent='Укажите дни аванса и зарплаты на вкладке «Платежи».';return}
+  if(bal===''){v.textContent='—';d.textContent='Укажите на вкладке «Платежи», сколько сейчас денег на счетах.';return}
+  var now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()),best=null;
+  [0,1].forEach(function(off){[d1,d2].forEach(function(dd){if(!(dd>=1&&dd<=31))return;var dt=dueDate(dd,t0,off);if(dt>=t0&&(!best||dt<best))best=dt})});
+  if(!best){v.textContent='—';return}
+  var days=Math.round((best-t0)/864e5),un=0,n=0;
+  PAYS.forEach(function(p){
+    var dd=+p.day;if(!(dd>=1&&dd<=31))return;
+    [0,1].forEach(function(off){
+      var dt=dueDate(dd,t0,off);
+      if(dt>=t0&&dt<best){var key=ym(dt.getFullYear()*12+dt.getMonth());if(!(MON[key]&&MON[key].paid&&MON[key].paid[p.id])){un+=payAmt(p,key);n++}}
+    });
+  });
+  var rem=totBal()-un,per=rem/Math.max(1,days);
+  v.textContent=(per<0?'−':'')+rub(Math.abs(per))+' в день';
+  v.className='v '+(per<0?'bad':'good');
+  d.textContent=(days===0?'Выплата сегодня. ':'До выплаты '+dfmt(best)+': '+days+' дн. ')+'На счетах '+rub(totBal())+', неоплаченных платежей до неё на '+rub(un)+(n?' ('+n+' шт.)':'')+'.';
+}
+function dfmt(d){return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)}
+/* ---------- импорт выписки и фото ---------- */
+var BANKMAP={'Супермаркеты':'food','Продукты':'food','Детские товары':'child','АЗС':'transport','Автоуслуги':'transport','Транспорт':'transport','Такси':'transport','Сотовая связь':'comm','Связь':'comm','Интернет':'comm','Цифровой контент':'digital','Табак':'tobacco','Дом и ремонт':'home','Переводы людям':'xfer','Кафе и рестораны':'cafe','Аптеки':'health','Здоровье':'health','Одежда и обувь':'cloth','Одежда':'cloth','Развлечения':'fun','Отдых':'fun','Образование':'kg','Между счетами':'skip','Платежи и переводы':'skip','Коммунальные платежи':'skip','ЖКХ':'skip'};
+var BASE_RULES={'столовая':'lunch'};
+function norm(t){return String(t||'').toLowerCase().replace(/\s+/g,' ').trim()}
+function num2(x){if(x==null||x==='')return 0;var v=parseFloat(String(x).replace(/\s/g,'').replace(',','.'));return isFinite(v)?v:0}
+function parseCsv(text){
+  var first=text.split('\n')[0]||'',dl=(first.split(';').length>=first.split(',').length)?';':',';
+  var rows=[],row=[],f='',q=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;
+    else if(c===dl){row.push(f);f=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(f);f='';if(row.length>1||row[0]!=='')rows.push(row);row=[]}
+    else f+=c;
+  }
+  if(f!==''||row.length){row.push(f);rows.push(row)}
+  return rows;
+}
+function decodeBuf(buf){try{return new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch(e){return new TextDecoder('windows-1251').decode(buf)}}
+function catFor(o){
+  var n=norm(o.name),r=RULES[n]||BASE_RULES[n];
+  if(r)return r;
+  var hay=(o.name+' '+o.tsp).toLowerCase();
+  if(/wildberries|вайлдберриз|\bwb\b|\bwb\*|ozon|озон/.test(hay))return /ozon|озон/.test(hay)?'mp_ozon':'mp_wb';
+  if(/yandex.{0,6}market|яндекс.?маркет/.test(hay))return 'mp_ym';
+  if(/megamarket|мегамаркет|aliexpress|алиэкспресс|lamoda|ламода|sbermarket|сбермаркет/.test(hay))return 'mp_other';
+  var wc=($('wife_card').value||'').trim();
+  if(wc&&o.card===wc)return o.kind==='exp'?'w_other':'skip';
+  var b=BANKMAP[o.bcat];
+  if(b)return b;
+  if(o.kind==='inc')return /зарплат|аванс/.test(n)?'i_me':(/atm|банкомат|наличн/.test(hay)?'i_cash':'i_oth');
+  return 'other';
+}
+var catFor0=catFor;
+catFor=function(o){
+  var c=catFor0(o);
+  if(c==='skip')return c;
+  if(o.kind==='inc')return INC.indexOf(c)>=0?c:(INC.indexOf('i_oth')>=0?'i_oth':(INC[0]||'skip'));
+  return EXP.some(function(e){return e[0]===c})?c:(EXP.some(function(e){return e[0]==='other'})?'other':'skip');
+};
+function readStatement(rows){
+  var h=rows[0].map(function(x){return x.trim()});
+  var ix=function(n){return h.indexOf(n)};
+  var iD=ix('Дата и время операции'),iT=ix('Списание/Зачисление'),iA=ix('Сумма в валюте счёта'),iN=ix('Наименование операции');
+  if(iD<0||iT<0||iA<0||iN<0)return null;
+  var iC=ix('Категория'),iCard=ix('Карта'),iCom=ix('Комиссия в валюте счёта'),iM=ix('Наименование ТСП');
+  var cnt={},ops=[];
+  rows.slice(1).forEach(function(r){
+    if(r.length<=iA||!r[iD])return;
+    var dt=r[iD].trim(),m=/^(\d\d)\.(\d\d)\.(\d{4})/.exec(dt);if(!m)return;
+    var amt=num2(r[iA]),kind=r[iT].trim()==='Зачисление'?'inc':'exp',name=(r[iN]||'').trim(),card=((r[iCard]||'').replace(/\D/g,'')).slice(-4);
+    var base=[dt,String(r2(amt)),name,card].join('|');cnt[base]=(cnt[base]||0)+1;
+    var o={key:base+'#'+cnt[base],dt:dt,ym:m[3]+'-'+m[2],day:m[1]+'.'+m[2],name:name,tsp:(iM>=0?r[iM]||'':''),bcat:(iC>=0?(r[iC]||'').trim():''),card:card,kind:kind,amt:Math.abs(amt)};
+    o.cat=catFor(o);o.def=o.cat;ops.push(o);
+    var com=iCom>=0?num2(r[iCom]):0;
+    if(com>0){var b2=base+'|fee';cnt[b2]=(cnt[b2]||0)+1;ops.push({key:b2+'#'+cnt[b2],dt:dt,ym:m[3]+'-'+m[2],day:m[1]+'.'+m[2],name:'Комиссия: '+name,tsp:'',bcat:'',card:card,kind:'exp',amt:com,cat:'fees',def:'fees'})}
+  });
+  return ops;
+}
+var IMP=null;
+function catOptions(kind,sel){
+  var h='',lab={i_me:'Моя зарплата',i_sp:'Зарплата жены',i_oth:'Пособия и прочее',i_cash:'Пополнения наличными',i_vac:'Отпускные',i_mat:'Материальная помощь'};
+  if(kind==='inc'){INC.forEach(function(c){h+='<option value="'+c+'"'+(c===sel?' selected':'')+'>'+(lab[c]||(CATS[c]&&esc(CATS[c].label))||c)+'</option>'})}
+  else{EXP.forEach(function(e){h+='<option value="'+e[0]+'"'+(e[0]===sel?' selected':'')+'>'+e[1]+(e[4]==='mp'?' (маркетплейсы)':e[4]==='w'?' (жена)':'')+'</option>'})}
+  return h+'<option value="skip"'+(sel==='skip'?' selected':'')+'>Не учитывать</option>';
+}
+function renderImp(){
+  var box=$('imp-box');
+  if(!IMP){box.hidden=true;box.innerHTML='';return}
+  box.hidden=false;
+  if(IMP.msg&&!IMP.ops){box.innerHTML='<p class="small '+(IMP.cls||'muted')+'">'+IMP.msg+'</p>';return}
+  var h='<p class="small"><b>'+IMP.title+'</b> '+IMP.info+'</p><div class="tw" style="max-height:340px;overflow:auto"><table class="it"><tbody>';
+  IMP.ops.forEach(function(o,i){
+    h+='<tr><td><input type="checkbox" data-ion="'+i+'"'+(o.on?' checked':'')+' aria-label="Внести"></td><td>'+o.day+'</td><td>'+(o.kind==='inc'?'+':'')+o.name.slice(0,26)+'</td><td class="a">'+r2(o.amt).toLocaleString('ru-RU')+'</td><td><select data-icat="'+i+'">'+catOptions(o.kind,o.cat)+'</select></td></tr>';
+  });
+  h+='</tbody></table></div><div class="hrow" style="justify-content:flex-start;gap:8px;margin-top:10px"><button type="button" class="pill main" data-iok="1">Внести отмеченные</button><button type="button" class="pill" data-icancel="1">Отмена</button></div><p class="small muted" style="margin-top:6px">Если поменяете категорию, приложение запомнит это для такого же названия в следующих выписках.</p>';
+  box.innerHTML=h;
+}
+function addOpsToMonths(ops){
+  syncCur();
+  ops.forEach(function(o){
+    var k=o.ym;
+    if(k<START)START=k;if(k>LAST)LAST=k;
+    var m=MON[k]||(MON[k]=mkMonth(k));
+    m.ent=m.ent||{};
+    var id=o.cat,arr=(m.ent[id]||[]).concat([r2(o.amt)]);
+    m.ent[id]=arr;
+    m[inpId(id)]=String(r2(arr.reduce(function(a,b){return a+b},0)));
+    m._t=1;
+  });
+  fillM(CUR);
+}
+function confirmImp(){
+  var chosen=IMP.ops.filter(function(o){return o.on&&o.cat!=='skip'});
+  var marked=IMP.ops.filter(function(o){return o.on});
+  IMP.ops.forEach(function(o){if(o.cat!==o.def&&o.on&&!o.photo)RULES[norm(o.name)]=o.cat});
+  addOpsToMonths(chosen);rebaseAll();
+  marked.forEach(function(o){if(IMPK.indexOf(o.key)<0)IMPK.push(o.key)});
+  chosen.forEach(function(o){if(o.photo&&o.kind!=='inc')applyCard($('pay_from').value,-o.amt,o.name||'Чек')});
+  save();renderMonths(false);update();
+  var sum=chosen.reduce(function(a,o){return a+(o.kind==='inc'?0:o.amt)},0);
+  IMP={msg:'Внесено операций: '+chosen.length+(sum?', расходов на '+rub(sum):'')+'. Проверьте категории на вкладке «Бюджет» и нажмите «Сохранить изменения».',cls:'good'};
+  renderImp();
+}
+function handleCsv(file){
+  IMP={msg:'Читаю файл…'};renderImp();
+  file.arrayBuffer().then(function(buf){
+    var rows=parseCsv(decodeBuf(buf));
+    var ops=rows.length>1?readStatement(rows):null;
+    if(!ops){IMP={msg:'Формат файла не распознан. Сейчас читается выписка ВТБ в CSV, где есть колонки «Дата и время операции», «Списание/Зачисление» и «Сумма в валюте счёта».',cls:'warn'};renderImp();return}
+    var fresh=ops.filter(function(o){return IMPK.indexOf(o.key)<0}),dup=ops.length-fresh.length;
+    fresh.forEach(function(o){o.on=o.cat!=='skip'});
+    if(!fresh.length){IMP={msg:'В файле '+ops.length+' операций, все они уже внесены раньше. Новых нет.',cls:'muted'};renderImp();return}
+    IMP={ops:fresh,title:'Новых операций: '+fresh.length+'.',info:(dup?'Уже внесено раньше и пропущено: '+dup+'. ':'')+'Проверьте категории и снимите отметки с лишних.'};
+    renderImp();
+  }).catch(function(){IMP={msg:'Не удалось прочитать файл.',cls:'warn'};renderImp()});
+}
+function shrink(file){
+  return createImageBitmap(file).then(function(bm){
+    var sc=Math.min(1,1600/Math.max(bm.width,bm.height)),c=document.createElement('canvas');
+    c.width=Math.round(bm.width*sc);c.height=Math.round(bm.height*sc);
+    c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+    return new Promise(function(res,rej){c.toBlob(function(b){b?res(b):rej(new Error('blob'))},'image/jpeg',0.82)});
+  });
+}
+var PROV=[[/тгк|теплоэнерг|отоплен/i,'f_tgk','ТГК-14'],[/водоканал|вод/i,'f_vod','Водоканал'],[/энергосбыт|электро/i,'f_el','Читаэнергосбыт'],[/саяны|жкс|содержан/i,'f_zhks','ЖКС «Саяны»'],[/дом плюс/i,'f_dom','Дом плюс'],[/капитал|фонд/i,'f_kap','Фонд капремонта'],[/эко|мусор|тко/i,'f_eko','ЭкоАльянс']];
+function handlePhoto(file){
+  IMP={msg:'Распознаю фото, это занимает до минуты…'};renderImp();
+  var S=null;
+  claude.use('sample').then(function(s){
+    S=s;if(!S)throw {code:'unavailable'};
+    return shrink(file);
+  }).then(function(blob){
+    var cats=EXP.map(function(e){return e[0]+' = '+e[1]}).join('; ');
+    var prompt='Ты помогаешь вести семейный бюджет. На фото кассовый чек или квитанция, либо снимок экрана личного кабинета с начислениями за ЖКХ. Верни только JSON без пояснений такого вида: {"kind":"receipt"|"utility"|"other","date":"ДД.ММ.ГГГГ" или null,"merchant":"название магазина или организации","total":число,"category":"id категории из списка","providers":[{"name":"поставщик","amount":число}],"note":"коротко, что не удалось разобрать"}. Для чека поставь итоговую сумму к оплате в total и выбери самую подходящую категорию по id из списка: '+cats+'. Для ЖКХ положи в providers каждого поставщика с суммой к оплате (берите по модулю, знак минус в кабинете означает долг к оплате), total поставь суммой всех. Если не уверен в числе, не выдумывай, а оставь null и опиши в note.';
+    return S.json(prompt,{images:[blob],cache:false});
+  }).then(function(r){
+    if(!r||typeof r!=='object')throw {code:'bad'};
+    if(r.kind==='utility'&&r.providers&&r.providers.length){
+      var rows=[];r.providers.forEach(function(p){var hit=null;PROV.forEach(function(x){if(!hit&&x[0].test(p.name))hit=x});rows.push({name:p.name,amt:Math.abs(+p.amount||0),id:hit&&hit[1],label:hit&&hit[2]})});
+      IMP={util:rows,msg:null};
+      var h='<p class="small"><b>Квитанции ЖКХ распознаны.</b> Суммы запишутся в блок «Квитанции по поставщикам» месяца «'+mname(CUR)+'».</p><table class="it"><tbody>';
+      rows.forEach(function(x){h+='<tr><td>'+x.name+'</td><td class="a">'+r2(x.amt).toLocaleString('ru-RU')+'</td><td>'+(x.id?'→ '+x.label:'<span class="st-warn">не сопоставлено</span>')+'</td></tr>'});
+      h+='</tbody></table><div class="hrow" style="justify-content:flex-start;gap:8px;margin-top:10px"><button type="button" class="pill main" data-uok="1">Внести в ЖКУ</button><button type="button" class="pill" data-icancel="1">Отмена</button></div>';
+      var b=$('imp-box');b.hidden=false;b.innerHTML=h;return;
+    }
+    var amt=+r.total;
+    if(!(amt>0))throw {code:'empty',note:r.note};
+    var m=/^(\d\d)\.(\d\d)\.(\d{4})$/.exec(r.date||''),ymk=m?m[3]+'-'+m[2]:CUR,day=m?m[1]+'.'+m[2]:dfmt(new Date());
+    var cat=catFor({name:r.merchant||'',tsp:'',bcat:'',card:'',kind:'exp'});
+    var cid=EXP.some(function(e){return e[0]===r.category})?r.category:cat;
+    if(RULES[norm(r.merchant)])cid=RULES[norm(r.merchant)];
+    IMP={ops:[{key:'photo|'+(r.date||'')+'|'+amt+'|'+(r.merchant||'')+'#1',dt:r.date||'',ym:ymk,day:day,name:r.merchant||'Чек',tsp:'',bcat:'',card:'',kind:'exp',amt:amt,cat:cid,def:cid,on:true,photo:true}],title:'Чек распознан.',info:(r.note?r.note+' ':'')+'Проверьте сумму и категорию.'};
+    renderImp();
+  }).catch(function(e){
+    IMP={msg:e&&e.code==='unavailable'?'Распознавание фото недоступно в этом окне.':e&&e.code==='empty'?'Сумма на фото не найдена. '+(e.note||'Попробуйте снять ближе и ровнее.'):'Не получилось распознать фото ('+((e&&e.code)||'ошибка')+'). Попробуйте ещё раз.',cls:'warn'};renderImp();
+  });
+}
+function applyUtilPhoto(){
+  var any=false;
+  IMP.util.forEach(function(x){if(x.id&&x.amt){var el=$(x.id);el.value=String(r2(x.amt));any=true}});
+  if(any){syncCur();MON[CUR]._t=1;baseMonth(CUR);save();renderMonths(false);update()}
+  IMP={msg:any?'Суммы ЖКХ внесены в «'+mname(CUR)+'». Они заменили расчёт по тарифам.':'Не удалось сопоставить поставщиков.',cls:any?'good':'warn'};renderImp();
+}
+/* ---------- сверка по услугам: объёмы из сумм ---------- */
+function svcRows(){
+  var ppl=Math.max(1,num('u_people')),area=Math.max(1,num('u_area')),hk=$('u_hottype').value==='open'?'hotO':'hotC';
+  return [
+    {n:'Холодная вода',a:num('s_cold'),tk:'cold',u:'м³',f:'u_cold',div:ppl,cur:num('u_cold')*ppl},
+    {n:'Горячая вода',a:num('s_hot'),tk:hk,u:'м³',f:'u_hot',div:ppl,cur:num('u_hot')*ppl},
+    {n:'Водоотведение',a:num('s_sew'),tk:'sewer',u:'м³',f:null},
+    {n:'Отопление',a:num('s_heat'),tk:'heat',u:'Гкал',f:'u_norm',div:area,cur:num('u_norm')*area},
+    {n:'Электроэнергия (Читаэнергосбыт)',a:num('f_el'),tk:'el',u:'кВт·ч',f:'u_kwh',div:1,cur:num('u_kwh')}
+  ].map(function(r){var t=tv(r.tk,0);r.t=t;r.vol=r.a>0&&t>0?r.a/t:0;return r});
+}
+function nf(x,d){return x.toLocaleString('ru-RU',{maximumFractionDigits:d===undefined?2:d})}
+function renderSvc(){
+  var el=$('svc-cmp');if(!el)return;
+  var R=svcRows(),any=R.some(function(r){return r.vol>0});
+  if(!any){el.innerHTML='<p class="small muted">Впишите суммы по услугам выше, и здесь появится объём, который за ними стоит.</p>';return}
+  var h='<p class="small"><b>Какой объём стоит за этими суммами.</b> Сумма делится на тариф периода '+(typeof lab==='function'?lab().s0:'до 1 октября 2026')+' (остаток относится к прошлому месяцу).</p><div class="elist">';
+  R.forEach(function(r){
+    if(!(r.vol>0))return;
+    h+='<div class="er"><span class="n">'+r.n+'</span><span class="v">≈ '+nf(r.vol,r.u==='Гкал'?3:1)+' '+r.u+'</span><span class="t">'+rub(r.a)+' ÷ '+nf(r.t,2)+' ₽'+(r.cur>0?'. Сейчас в «Мои параметры»: '+nf(r.cur,r.u==='Гкал'?3:1)+' '+r.u+' в месяц':'')+'</span></div>';
+  });
+  h+='</div>';
+  var c=R[0].vol+R[1].vol;
+  if(R[2].vol>0&&c>0){var df=Math.abs(R[2].vol-c)/R[2].vol;h+='<p class="small '+(df<0.12?'good':'warn')+'" style="margin-top:6px">Проверка: водоотведение '+nf(R[2].vol,1)+' м³, холодная + горячая вода '+nf(c,1)+' м³. '+(df<0.12?'Объёмы сходятся, данные согласованы.':'Расхождение заметное: возможно, часть сумм относится к разным месяцам.')+'</p>'}
+  h+='<div class="hrow" style="justify-content:flex-start;gap:8px;margin-top:10px"><button type="button" class="pill main" data-svc="1">Подставить эти объёмы в «Мои параметры»</button></div>';
+  el.innerHTML=h;
+}
+function applySvc(){
+  var any=0;
+  svcRows().forEach(function(r){
+    if(!r.f||!(r.vol>0))return;
+    var v=r.vol/r.div;$(r.f).value=String(r.f==='u_norm'?Math.round(v*1e5)/1e5:Math.round(v*100)/100);any++;
+  });
+  if(any){syncCur();MON[CUR]._t=1;save();renderMonths(false);update()}
+}
+/* ---------- скриншоты ЕИРЦ: суммы и показатели ---------- */
+var EIRC=null;
+function renderEirc(){
+  var b=$('eirc-box');
+  if(!EIRC){b.hidden=true;b.innerHTML='';return}
+  b.hidden=false;
+  if(EIRC.msg){b.innerHTML='<p class="small '+(EIRC.cls||'muted')+'">'+EIRC.msg+'</p>';return}
+  var h='<p class="small"><b>Распознано за '+mname(EIRC.k).toLowerCase()+'.</b> Проверьте и при необходимости поправьте значения: распознавание может ошибаться. После нажатия «Внести» они запишутся в этот месяц.</p>';
+  h+='<div class="elist">';
+  EIRC.rows.forEach(function(x,i){h+='<div class="er"><span class="n">'+esc(x.name)+'</span><span class="v"><input type="number" step="any" min="0" data-ev="r:'+i+'" value="'+r2(x.amt)+'" aria-label="Сумма: '+esc(x.name)+'"> ₽</span><span class="t">'+(x.id?'→ '+x.label:'<span class="st-warn">не сопоставлено, не будет внесено</span>')+'</span></div>'});
+  (EIRC.svc||[]).forEach(function(x,i){h+='<div class="er"><span class="n">'+SVN[x.key][0]+', сальдо по услуге</span><span class="v"><input type="number" step="any" min="0" data-ev="s:'+i+'" value="'+r2(x.amt)+'" aria-label="Сумма: '+SVN[x.key][0]+'"> ₽</span><span class="t">→ «Сальдо по услугам внутри поставщиков»</span></div>'});
+  EIRC.met.forEach(function(m,i){h+='<div class="er"><span class="n">'+m.label+', объём за месяц</span><span class="v"><input type="number" step="any" min="0" data-ev="m:'+i+'" value="'+m.vol+'" aria-label="Объём: '+m.label+'"> '+m.unit+'</span><span class="t">→ '+m.to+'</span></div>'});
+  h+='</div>';
+  if(EIRC.debt.length)h+='<p class="small muted" style="margin-top:8px">В скриншотах есть задолженность: '+EIRC.debt.map(function(d){return esc(d.name)+' '+rub(d.amount)}).join(', ')+'. Она в бюджет не вносится.</p>';
+  if(EIRC.note)h+='<p class="small muted">'+esc(EIRC.note)+'</p>';
+  h+='<div class="hrow" style="justify-content:flex-start;gap:8px;margin-top:10px"><button type="button" class="pill main" data-eok="1">Внести в ЖКУ</button><button type="button" class="pill" data-ecancel="1">Отмена</button></div>';
+  b.innerHTML=h;
+}
+var EMET={cold:['Холодная вода','м³','«Холодная вода, м³ на человека»'],hot:['Горячая вода','м³','«Горячая вода, м³ на человека»'],electric:['Электроэнергия','кВт·ч','«Электроэнергия, кВт·ч в месяц»'],heat:['Отопление','Гкал','«Отопление, Гкал на м²»']};
+var SVN={cold:['Водоснабжение (холодная вода)','s_cold'],sewer:['Водоотведение','s_sew'],heat:['Отопление','s_heat'],hot:['Горячая вода','s_hot']};
+var EFLD={cold:'u_cold',hot:'u_hot',electric:'u_kwh',heat:'u_norm'};
+function handleEirc(files){
+  files=[].slice.call(files).slice(0,6);
+  EIRC={msg:'Распознаю '+files.length+' '+(files.length===1?'скриншот':'скриншота')+', это занимает до минуты…'};renderEirc();
+  var S=null;
+  claude.use('sample').then(function(s){
+    S=s;if(!S)throw {code:'unavailable'};
+    return Promise.all(files.map(shrink));
+  }).then(function(blobs){
+    var prompt='Ты помогаешь вести семейный бюджет. На изображениях скриншоты личного кабинета ЕИРЦ или квитанции за жилищно-коммунальные услуги в Республике Бурятия, это один или несколько экранов. Верни только JSON без пояснений такого вида: {"period":"ММ.ГГГГ" или null,"providers":[{"name":"название поставщика или услуги","amount":число}],"services":[{"service":"cold"|"sewer"|"heat"|"hot","amount":число}],"meters":[{"service":"cold"|"hot"|"electric"|"heat","volume":число,"unit":"м³"|"кВт·ч"|"Гкал"}],"debt":[{"name":"поставщик","amount":число}],"note":"коротко, что не удалось разобрать"}. Поставщики в Бурятии: ТГК-14, Водоканал, Читаэнергосбыт, ЖКС Саяны, Дом плюс, Фонд капитального ремонта, ЭкоАльянс. В amount ставь сумму, начисленную за расчётный месяц (если её нет, то к оплате за месяц), без долга и пени. Если на экране только «Текущее сальдо» по лицевым счетам, то отрицательное сальдо означает сумму к оплате: берёшь его модуль, а положительное сальдо означает переплату, такой счёт пропусти. Задолженность перечисли отдельно в debt, переплату не указывай. В meters укажи объём потребления за месяц (не показания счётчика), если он есть на экране. Если экраны относятся к одному месяцу, объедини данные. Если экран показывает один лицевой счёт, поставщика бери из заголовка, а сумму из строки «Итого на ДАТА» (модуль числа). В services внеси суммы по отдельным услугам внутри счёта по строке «Итого на конец месяца» (модуль числа): Водоснабжение это cold, Водоотведение sewer, Отопление heat, Горячая вода hot. Числа без пробелов и знака валюты.';
+    return S.json(prompt,{images:blobs,cache:false});
+  }).then(function(r){
+    if(!r||typeof r!=='object')throw {code:'bad'};
+    var rows=[],byId={};
+    (r.providers||[]).forEach(function(p){
+      var amt=Math.abs(+p.amount||0);if(!amt)return;
+      var hit=null;PROV.forEach(function(x){if(!hit&&x[0].test(p.name||''))hit=x});
+      if(hit&&byId[hit[1]]){byId[hit[1]].amt+=amt;return}
+      var row={name:p.name||'Без названия',amt:amt,id:hit&&hit[1],label:hit&&hit[2]};rows.push(row);if(hit)byId[hit[1]]=row;
+    });
+    var met=[];
+    (r.meters||[]).forEach(function(m){var d=EMET[m.service],v=Math.abs(+m.volume||0);if(d&&v>0)met.push({key:m.service,label:d[0],unit:d[1],to:d[2],vol:v})});
+    var pm=/^(\d\d)\.(\d{4})$/.exec(r.period||''),k=pm?pm[2]+'-'+pm[1]:CUR;
+    var note=r.note||'';
+    if(k<START||k>LAST){note=(note?note+' ':'')+'Месяц '+mname(k)+' вне списка вкладок, данные пойдут в '+mname(CUR)+'.';k=CUR}
+    var svc=[];(r.services||[]).forEach(function(x){var a=Math.abs(+x.amount||0);if(a>0&&SVN[x.service])svc.push({key:x.service,amt:a})});
+    if(!rows.length&&!met.length&&!svc.length)throw {code:'empty',note:r.note};
+    EIRC={k:k,rows:rows,met:met,svc:svc,debt:(r.debt||[]).filter(function(d){return +d.amount>0}).map(function(d){return {name:d.name||'',amount:+d.amount}}),note:note};
+    renderEirc();
+  }).catch(function(e){
+    EIRC={msg:e&&e.code==='unavailable'?'Распознавание недоступно в этом окне.':e&&e.code==='empty'?'Суммы и показатели не найдены. '+(e.note||'Попробуйте скриншот целиком, чтобы были видны названия поставщиков и суммы.'):'Не получилось распознать ('+((e&&e.code)||'ошибка')+'). Попробуйте ещё раз.',cls:'warn'};renderEirc();
+  });
+}
+function applyEirc(){
+  var k=EIRC.k;if(k!==CUR)openMonth(k);
+  var any=0,people=Math.max(1,num('u_people')),area=Math.max(1,num('u_area'));
+  EIRC.rows.forEach(function(x){if(x.id&&x.amt>0){$(x.id).value=String(r2(x.amt));any++}});
+  (EIRC.svc||[]).forEach(function(x){if(x.amt>0){$(SVN[x.key][1]).value=String(r2(x.amt));any++}});
+  EIRC.met.forEach(function(m){
+    if(!(m.vol>0))return;
+    var v=m.key==='cold'||m.key==='hot'?m.vol/people:m.key==='heat'?m.vol/area:m.vol;
+    $(EFLD[m.key]).value=String(m.key==='heat'?Math.round(v*1e5)/1e5:r2(v));any++;
+  });
+  if(any){syncCur();MON[CUR]._t=1;baseMonth(CUR);save();renderMonths(false);update()}
+  EIRC={msg:any?'Внесено в «'+mname(CUR)+'»: суммы по поставщикам и расход воды, электричества и отопления. Расчёт и сравнение на этой вкладке обновились.':'Ничего не удалось внести.',cls:any?'good':'warn'};renderEirc();
+}
+document.addEventListener('input',function(e){
+  var d=e.target.dataset&&e.target.dataset.ev;if(!d||!EIRC||!EIRC.rows)return;
+  var p=d.split(':'),v=+e.target.value;if(!isFinite(v))return;
+  if(p[0]==='r')EIRC.rows[+p[1]].amt=v;else if(p[0]==='s')EIRC.svc[+p[1]].amt=v;else EIRC.met[+p[1]].vol=v;
+});
+(function(){
+  var f=document.createElement('input');f.type='file';f.accept='image/*';f.multiple=true;f.id='eirc-file';f.hidden=true;document.body.appendChild(f);
+  f.addEventListener('change',function(){if(f.files.length)handleEirc(f.files);f.value=''});
+})();
+(function(){
+  function mk(id,acc,cap){var f=document.createElement('input');f.type='file';f.accept=acc;if(cap)f.setAttribute('capture','environment');f.id=id;f.hidden=true;document.body.appendChild(f);return f}
+  var fc=mk('csv-file','.csv,text/csv,text/plain'),fp=mk('photo-file','image/*',true);
+  fc.addEventListener('change',function(){if(fc.files[0])handleCsv(fc.files[0]);fc.value=''});
+  fp.addEventListener('change',function(){if(fp.files[0])handlePhoto(fp.files[0]);fp.value=''});
+})();
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.dataset&&t.dataset.pf!==undefined){$('pay_from').value=t.value;save();update()}
+  if(t.dataset&&t.dataset.pday!==undefined){var p=PAYS.filter(function(x){return x.id===t.dataset.pday})[0];if(p){p.day=t.value;save();renderPays();dailyUpdate()}}
+  if(t.dataset&&t.dataset.ppaid!==undefined){syncCur();var m=MON[CUR];m.paid=m.paid||{};if(t.checked)m.paid[t.dataset.ppaid]=1;else delete m.paid[t.dataset.ppaid];m._t=1;save();renderMonths(false);update()}
+  if(t.dataset&&t.dataset.ion!==undefined&&IMP&&IMP.ops)IMP.ops[+t.dataset.ion].on=t.checked;
+  if(t.dataset&&t.dataset.icat!==undefined&&IMP&&IMP.ops){var o=IMP.ops[+t.dataset.icat];o.cat=t.value;if(t.value==='skip')o.on=false}
+});
+/* ---------- свои категории: добавление, удаление, возврат ---------- */
+function incField(id,label){
+  return '<div class="field"><div class="lb"><label for="'+id+'">'+label+', ₽</label><button type="button" class="calc" data-ent="'+id+'" aria-expanded="false" aria-label="Счётчик сумм: '+label+'" title="Сложить суммы из банка">＋</button><button type="button" class="cprev" data-prev="'+id+'" aria-label="Взять из прошлого месяца: '+label+'" title="Взять из прошлого месяца">↶</button><button type="button" class="cdel" data-cdel="'+id+'" aria-label="Удалить категорию: '+label+'" title="Удалить категорию">×</button></div><input class="p m" id="'+id+'" type="number" inputmode="decimal" step="any" value="0" min="0"><div class="ent" id="ent_'+id+'" hidden></div></div>';
+}
+function rebuildCats(){
+  EXP.length=0;
+  BASE_EXP.forEach(function(e){if(!HID[e[0]])EXP.push(e)});
+  Object.keys(CATS).forEach(function(id){var c=CATS[id];if(c.sec!=='inc')EXP.push([id,esc(c.label),0,c.group||'want',c.sec==='main'||!c.sec?undefined:c.sec])});
+  var R={main:'',mp:'',w:''};
+  EXP.forEach(function(e){R[e[4]||'main']+=rowHtml(e)});
+  $('exp-rows').innerHTML=R.main+rows+autoRow('mpsum','Маркетплейсы (итог блока ниже)')+autoRow('wsum','Расходы жены (итог вкладки «Расходы жены»)');
+  $('mp-rows').innerHTML=R.mp;$('w-rows').innerHTML=R.w;
+  INC.length=0;
+  INC_BASE.forEach(function(id){
+    var f=$(id).closest('.field');f.hidden=!!HID[id];
+    var lb=f.querySelector('.lb');
+    if(lb&&!lb.querySelector('.cprev')){var pb=document.createElement('button');pb.type='button';pb.className='cprev';pb.dataset.prev=id;pb.title='Взять из прошлого месяца';pb.setAttribute('aria-label','Взять из прошлого месяца');pb.textContent='↶';lb.appendChild(pb)}
+    if(lb&&!lb.querySelector('.cdel')){var b=document.createElement('button');b.type='button';b.className='cdel';b.dataset.cdel=id;b.title='Удалить категорию';b.setAttribute('aria-label','Удалить категорию');b.textContent='×';lb.appendChild(b)}
+    if(!HID[id])INC.push(id);
+  });
+  var ih='';
+  Object.keys(CATS).forEach(function(id){var c=CATS[id];if(c.sec==='inc'){INC.push(id);ih+=incField(id,esc(c.label))}});
+  $('inc-extra').innerHTML=ih?'<div class="fgrid" style="grid-template-columns:1fr;margin-top:10px">'+ih+'</div>':'';
+  Object.keys(MF).forEach(function(k){delete MF[k]});
+  ['u_cold','u_hot','u_kwh','u_norm','e_util_fact'].concat(FIDS).concat(SIDS).concat(INC).concat(EXP.map(function(e){return 'e_'+e[0]})).forEach(function(id){MF[id]=1;if(DEFV[id]===undefined)DEFV[id]='0'});
+}
+function renderAddForms(){
+  var PH={main:'Новая категория расходов, например Спорт',mp:'Новая площадка, например Lamoda',w:'Новая категория, например Маникюр',inc:'Новый вид дохода, например Аренда'};
+  ['main','mp','w','inc'].forEach(function(sec){
+    var el=$('add-'+sec);if(!el)return;
+    var h='<div class="addc"><input type="text" id="ac_n_'+sec+'" maxlength="40" placeholder="'+PH[sec]+'" aria-label="Название новой категории">';
+    if(sec==='main')h+='<select id="ac_g_main" aria-label="Тип категории"><option value="need">Обязательное</option><option value="want">Желания</option><option value="save">Накопления</option></select>';
+    h+='<button type="button" class="pill" data-cadd="'+sec+'">Добавить категорию</button></div>';
+    var hid=[];
+    BASE_EXP.forEach(function(e){if(HID[e[0]]&&(e[4]||'main')===sec)hid.push([e[0],e[1]])});
+    if(sec==='inc')INC_BASE.forEach(function(id){if(HID[id])hid.push([id,INCLAB[id]])});
+    if(hid.length)h+='<p class="small muted" style="margin:8px 0 0">Скрытые: '+hid.map(function(x){return '<button type="button" class="lnk" data-crest="'+x[0]+'">вернуть «'+x[1]+'»</button>'}).join(', ')+'</p>';
+    el.innerHTML=h;
+  });
+}
+function catsChanged(){
+  syncCur();rebuildCats();fillM(CUR);
+  $('pay-new-cat').innerHTML=payCats();
+  renderAddForms();save();renderMonths(false);update();renderPays();
+}
+function addCat(sec){
+  var n=($('ac_n_'+sec).value||'').trim().slice(0,40);
+  if(!n){$('ac_n_'+sec).focus();return}
+  var id=(sec==='inc'?'i_x':'c_')+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36);
+  CATS[id]={label:n,sec:sec,group:sec==='main'?$('ac_g_main').value:'want'};
+  catsChanged();
+}
+function delCat(btn){
+  var id=btn.dataset.cdel;
+  if(!btn.dataset.arm){
+    btn.dataset.arm='1';btn.textContent='Удалить?';btn.classList.add('arm');
+    setTimeout(function(){if(btn.isConnected){delete btn.dataset.arm;btn.textContent='×';btn.classList.remove('arm')}},3500);
+    return;
+  }
+  if(CATS[id])delete CATS[id];else HID[id]=1;
+  catsChanged();
+}
+function openMonth(k){
+  syncCur();CUR=k;
+  if(!MON[k])MON[k]=mkMonth(k);
+  fillM(k);if(!MON[k]._a)baseMonth(k);save();renderMonths(true);update();
+}
+function renderMonths(center){
+  var el=$('months'),sl=el.scrollLeft,h='';
+  for(var k=START;k<=LAST;k=madd(k,1)){
+    h+='<button type="button" class="mt" role="tab" data-m="'+k+'" aria-selected="'+(k===CUR)+'"'+(k===NOW?' data-now="1"':'')+'><span class="mm">'+MS[+k.slice(5)-1]+'</span><span class="my">'+k.slice(0,4)+'</span>'+(MON[k]&&MON[k]._t?'<i class="dot"></i>':'')+'</button>';
+  }
+  h+='<button type="button" class="mt add" data-madd="1" aria-label="Добавить месяц">+</button>';
+  el.innerHTML=h;el.scrollLeft=sl;
+  if(center){var b=el.querySelector('[aria-selected="true"]');if(b)el.scrollLeft=b.offsetLeft-el.clientWidth/2+b.offsetWidth/2}
+}
+function g(id,k){
+  if(!MF[id]||k===undefined||k===CUR)return num(id);
+  var v=MON[k]&&MON[k][id];if(v===undefined)v=fb(id,k);
+  var x=parseFloat(String(v).replace(',','.'));return isFinite(x)?x:0;
+}
+
+/* ---------- ЖКУ ---------- */
+function tv(k,p){return p===2?num('t_'+k+'_1')*(1+num('u_scn')/100):num('t_'+k+'_'+p)}
+function calcU(k){
+  var people=num('u_people'),area=num('u_area');
+  var cold=people*g('u_cold',k),hot=people*g('u_hot',k);
+  var hk=$('u_hottype').value==='open'?'hotO':'hotC';
+  var L=[
+    {n:'Холодная вода',v:cold,u:'м³',k:'cold'},
+    {n:'Горячая вода',v:hot,u:'м³',k:hk},
+    {n:'Водоотведение',v:cold+hot,u:'м³',k:'sewer'},
+    {n:'Отопление',v:area*g('u_norm',k),u:'Гкал',k:'heat'},
+    {n:'Электроэнергия',v:g('u_kwh',k),u:'кВт·ч',k:'el'},
+    {n:'Вывоз мусора (ТКО)',v:people*num('u_tko')/12,u:'м³',k:'tko'}
+  ].map(function(l){l.c=[0,1,2].map(function(p){return l.v*tv(l.k,p)});return l});
+  var c1=area*num('u_content'),c2=area*num('u_cap');
+  L.push({n:'Содержание жилья',v:area,u:'м²',c:[c1,c1,c1],fixed:true});
+  L.push({n:'Капремонт',v:area,u:'м²',c:[c2,c2,c2],fixed:true});
+  var tot=[0,1,2].map(function(p){return L.reduce(function(s,l){return s+l.c[p]},0)});
+  return {rows:L,tot:tot};
+}
+function sgn(n){return (n>0?'+':n<0?'−':'')+fmt(Math.abs(n))+' ₽'}
+function renderU(U){
+  var L=lab();
+  var b='';
+  U.rows.forEach(function(l){
+    var d=l.c[1]-l.c[0];
+    b+='<tr><td>'+l.n+'</td><td>'+l.v.toLocaleString('ru-RU',{maximumFractionDigits:2})+' '+l.u+'</td><td>'+rub(l.c[0])+'</td><td>'+rub(l.c[1])+'</td><td>'+rub(l.c[2])+'</td><td class="'+(d>0.5?'warn':'muted')+'">'+(Math.abs(d)<0.5?'без изменений':sgn(d))+'</td></tr>';
+  });
+  $('u-body').innerHTML=b;
+  var d=U.tot[1]-U.tot[0];
+  $('u-foot').innerHTML='<tr><td>Итого в месяц</td><td></td><td>'+rub(U.tot[0])+'</td><td>'+rub(U.tot[1])+'</td><td>'+rub(U.tot[2])+'</td><td>'+sgn(d)+'</td></tr>';
+  var up=U.tot[0]>0?d/U.tot[0]*100:0;
+  var scnD=U.tot[2]-U.tot[1];
+  $('u-sum').innerHTML='<h2>Что изменилось</h2><p>По тарифам '+L.s1+' платёж '+(d>=0?'вырос':'снизился')+' на <b class="'+(d>0.5?'warn':'good')+'">'+rub(Math.abs(d))+'</b> в месяц ('+pct(up)+') по сравнению с периодом '+L.s0+', за год это <b>'+rub(Math.abs(d)*12)+'</b>.</p>'
+    +'<p style="margin-top:8px">Сценарий с ещё +'+pct(num('u_scn'))+' на регулируемые тарифы добавит ещё <b class="warn">'+rub(scnD)+'</b> в месяц, итого <b>'+rub(U.tot[2])+'</b>. Всего к периоду '+L.s0+': '+sgn(U.tot[2]-U.tot[0])+' в месяц, '+sgn((U.tot[2]-U.tot[0])*12)+' в год.</p>';
+  var reg=U.rows.filter(function(l){return !l.fixed}).reduce(function(s,l){return s+l.c[1]},0);
+  $('u-hint').innerHTML='Содержание жилья и капремонт не привязаны к индексу коммунальных тарифов, их ставки задаёт собрание собственников и региональные нормы. В расчёте они остаются без изменений. Коммунальные услуги по новым тарифам: '+rub(reg)+' в месяц.';
+  $('th-scn').textContent='Сценарий +'+pct(num('u_scn'),2);
+  $('th0').textContent=L.s0;$('th1').textContent=L.s1;
+}
+
+/* ---------- бюджет ---------- */
+function moTot(k,U){
+  U=U||calcU(k);
+  var ep=effP(k),fact=factOf(k),util=fact>0?fact:U.tot[ep];
+  var exp=util;EXP.forEach(function(e){exp+=g('e_'+e[0],k)});
+  var inc=0;INC.forEach(function(id){inc+=g(id,k)});
+  return {inc:inc,exp:exp,util:util,rest:inc-exp,ep:ep,fact:fact>0};
+}
+function incomes(){var o={me:0,sp:0,oth:0};INC.forEach(function(id){var v=num(id);if(id==='i_me')o.me=v;else if(id==='i_sp')o.sp=v;else o.oth+=v});return o}
+
+/* ---------- инструменты месяца: сброс, из прошлого месяца, диаграммы ---------- */
+function prevOne(id){
+  var pk=prevKey(CUR);if(!pk)return;
+  syncCur();
+  var p=MON[pk],v=p[id];if(v===undefined)v=fb(id,pk);
+  var m=MON[CUR];m.ent=m.ent||{};
+  if(p.ent&&p.ent[id]&&p.ent[id].length)m.ent[id]=p.ent[id].slice();else delete m.ent[id];
+  $(inpId(id)).value=v;
+  SKIP=true;entCommit(id);SKIP=false;syncCur();baseMonth(CUR);
+}
+function resetMonth(btn){
+  if(!btn.dataset.arm){
+    btn.dataset.arm='1';btn.textContent='Точно обнулить?';btn.classList.add('arm');
+    setTimeout(function(){if(btn.isConnected){delete btn.dataset.arm;btn.textContent='Обнулить месяц';btn.classList.remove('arm')}},4000);
+    return;
+  }
+  syncCur();
+  var m=MON[CUR];
+  EXP.map(function(e){return 'e_'+e[0]}).concat(INC).concat(FIDS).concat(SIDS).concat(['e_util_fact']).forEach(function(id){m[id]=FACT[id]?'':'0'});
+  delete m.ent;delete m.paid;m._t=0;
+  var mk=CUR.slice(5)+'.'+CUR.slice(0,4);
+  IMPK=IMPK.filter(function(k){return k.slice(3,10)!==mk});
+  fillM(CUR);baseMonth(CUR);save();renderMonths(false);update();
+}
+function donut(el,title,items){
+  var tot=items.reduce(function(s,x){return s+x.v},0);
+  if(tot<=0){el.innerHTML='<h3 class="small" style="margin:0">'+title+'</h3><p class="muted small" style="margin:0">Пока нет данных за этот месяц.</p>';return}
+  items=items.filter(function(x){return x.v>0}).sort(function(a,b){return b.v-a.v});
+  if(items.length>8){var rest=items.slice(7).reduce(function(s,x){return s+x.v},0);items=items.slice(0,7).concat([{n:'Остальное (мелкие)',v:rest,o:1}])}
+  var R=70,C=2*Math.PI*R,off=0,arcs='',leg='';
+  items.forEach(function(x,i){
+    var col='var(--c'+(x.o?9:i+1)+')',len=x.v/tot*C;
+    arcs+='<circle cx="95" cy="95" r="'+R+'" fill="none" stroke="'+col+'" stroke-width="34" stroke-dasharray="'+Math.max(0,len-(items.length>1?1.5:0)).toFixed(2)+' '+(C-len+(items.length>1?1.5:0)).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 95 95)"><title>'+x.n+': '+rub(x.v)+'</title></circle>';
+    off+=len;
+    leg+='<li><i style="background:'+col+'"></i><span class="n">'+x.n+'</span><span class="v">'+rub(x.v)+'</span><span class="p">'+pct(x.v/tot*100,0)+'</span></li>';
+  });
+  el.innerHTML='<h3 class="small" style="margin:0">'+title+'</h3><svg viewBox="0 0 190 190" role="img" aria-label="'+title+', всего '+rub(tot)+'">'+arcs+'<text class="ctr" x="95" y="93" text-anchor="middle" font-size="11" fill="currentColor" style="fill:var(--muted)">всего</text><text class="ctr" x="95" y="112" text-anchor="middle" font-size="15" font-weight="700">'+rub(tot)+'</text></svg><ul class="dleg">'+leg+'</ul>';
+}
+function renderCharts(util){
+  var ex=[],inc=[];
+  if(util>0)ex.push({n:'ЖКУ',v:util});
+  EXP.forEach(function(e){var v=num('e_'+e[0]);if(v>0)ex.push({n:e[1],v:v})});
+  INC.forEach(function(id){var v=num(id);if(v>0)inc.push({n:INCLAB[id]||(CATS[id]&&esc(CATS[id].label))||id,v:v})});
+  donut($('dn-exp'),'Расходы · '+mname(CUR),ex);
+  donut($('dn-inc'),'Доходы · '+mname(CUR),inc);
+}
+function renderBudget(U){
+  var L=lab();
+  var inc=incomes(),tot=inc.me+inc.sp+inc.oth;
+  var T=moTot(CUR,U),util=T.util;
+  $('e_util').value=fmt(util);
+  var sum={need:util,want:0,save:0};
+  EXP.forEach(function(e){sum[e[3]]+=num('e_'+e[0])});
+  var exp=sum.need+sum.want+sum.save;
+  var rest=tot-exp;
+  var rows=EXP.map(function(e){return [e[0],num('e_'+e[0])]}).concat([['util',util]]);
+  rows.forEach(function(r){
+    var share=tot>0?r[1]/tot*100:0;
+    $('pc_'+r[0]).textContent=pct(share,0);
+    $('bar_'+r[0]).style.width=Math.min(100,share)+'%';
+  });
+  var mpS=0,wS=0;
+  EXP.forEach(function(e){if(e[4]==='mp')mpS+=num('e_'+e[0]);if(e[4]==='w')wS+=num('e_'+e[0])});
+  [['mpsum',mpS],['wsum',wS]].forEach(function(r){
+    $('e_'+r[0]).value=fmt(r[1]);var sh=tot>0?r[1]/tot*100:0;
+    $('pc_'+r[0]).textContent=pct(sh,0);$('bar_'+r[0]).style.width=Math.min(100,sh)+'%';
+  });
+  $('mp-sum').textContent='Итого за '+mname(CUR).toLowerCase()+': '+rub(mpS)+'.';
+  $('w-sum').textContent='Итого за '+mname(CUR).toLowerCase()+': '+rub(wS)+'.';
+  $('k_inc').textContent=rub(tot);
+  $('k_exp').textContent=rub(exp);
+  var pk=prevKey(CUR),pd='';
+  if(pk&&MON[pk]._t){var pt=moTot(pk);pd=', '+sgn(exp-pt.exp)+' к прошлому месяцу'}
+  $('k_exp_d').textContent=(tot>0?pct(exp/tot*100,0)+' дохода':'')+pd;
+  var kr=$('k_rest'),kd=$('k_diff');
+  kd.textContent=(rest<0?'−':'+')+rub(Math.abs(rest));kd.className=rest<0?'bad':'good';
+  if(anyBal()){
+    var tb=totBal();kr.textContent=(tb<0?'−':'')+rub(Math.abs(tb));kr.className='v '+(tb<0?'bad':'good');
+    $('k_rest_d').textContent=Object.keys(CARDS).filter(function(k){return $(CARDS[k][0]).value!==''}).map(function(k){return CARDS[k][1].replace('Карта ','').replace('Альфа Банк','Альфа').replace('Другие счета и наличные','Прочее')+' '+rub(num(CARDS[k][0]))}).join(' · ');
+  }else{
+    kr.textContent=(rest<0?'−':'')+rub(Math.abs(rest));kr.className='v '+(rest<0?'bad':'good');
+    $('k_rest_d').textContent=rest<0?'расходы больше дохода':'свободные деньги (остатки карт не указаны)';
+  }
+  $('k_u').textContent=rub(util);
+  $('k_u_d').textContent=(T.fact?'по квитанции':periodL()[T.ep])+(tot>0?', '+pct(util/tot*100,1)+' дохода':'');
+  var g=[['Обязательное',sum.need,50,'max'],['Желания',sum.want,30,'max'],['Накопления',sum.save,20,'min']];
+  var h='';
+  g.forEach(function(x){
+    var p=tot>0?x[1]/tot*100:0;
+    var okk=x[3]==='max'?p<=x[2]:p>=x[2];
+    h+='<div class="gauge"><div class="t"><span>'+x[0]+'</span><span class="num '+(okk?'good':'warn')+'">'+pct(p,0)+' · цель '+(x[3]==='max'?'до ':'от ')+x[2]+'%</span></div><div class="b"><i style="width:'+Math.min(100,p)+'%"></i><u style="left:'+x[2]+'%"></u></div></div>';
+  });
+  $('gauges').innerHTML=h;
+  var d=U.tot[1]-U.tot[0];
+  $('delta-note').innerHTML=(T.fact?'ЖКУ этого месяца взяты из квитанции, сравнение ниже считается по тарифам. ':'')+'Переход с тарифов '+L.s0+' на тарифы '+L.s1+' '+(d>=0?'добавляет':'снижает')+' <b>'+rub(Math.abs(d))+'</b> в месяц и <b>'+rub(Math.abs(d)*12)+'</b> в год. Остаток при прежних тарифах был бы '+rub(tot-(exp-util+U.tot[0]))+', по новым '+rub(tot-(exp-util+U.tot[1]))+', в сценарии +'+pct(num('u_scn'))+' '+rub(tot-(exp-util+U.tot[2]))+'.';
+  $('lb_util').textContent=T.fact?'ЖКУ (по квитанции)':'ЖКУ (расчёт по вкладке «ЖКУ и тарифы»)';
+  renderCharts(util);
+  return {tot:tot,exp:exp,rest:rest,util:util};
+}
+
+/* ---------- итоги ---------- */
+function renderSummary(){
+  var keys=Object.keys(MON).filter(function(k){return MON[k]._t||k===CUR&&false}).sort();
+  var body='',cum=0,ti=0,te=0,tu=0,bars='',R=[];
+  keys.forEach(function(k){var t=moTot(k);cum+=t.rest;ti+=t.inc;te+=t.exp;tu+=t.util;R.push([k,t,cum])});
+  var mx=1;R.forEach(function(r){mx=Math.max(mx,Math.abs(r[1].rest))});
+  R.forEach(function(r){
+    var t=r[1];
+    body+='<tr'+(r[0]===CUR?' class="cur"':'')+'><td>'+mname(r[0])+'</td><td>'+rub(t.inc)+'</td><td>'+rub(t.exp)+'</td><td>'+rub(t.util)+(t.fact?' *':'')+'</td><td class="'+(t.rest<0?'bad':'good')+'">'+(t.rest<0?'−':'')+rub(Math.abs(t.rest))+'</td><td>'+(r[2]<0?'−':'')+rub(Math.abs(r[2]))+'</td></tr>';
+    bars+='<div class="sbar"><span>'+MS[+r[0].slice(5)-1]+' '+r[0].slice(0,4)+'</span><div class="tr"><i style="width:'+Math.round(Math.abs(t.rest)/mx*100)+'%;background:var(--'+(t.rest<0?'bad':'good')+')"></i></div><span class="v">'+(t.rest<0?'−':'')+rub(Math.abs(t.rest))+'</span></div>';
+  });
+  $('s-body').innerHTML=body||'<tr><td colspan="6" class="muted">Пока нет заполненных месяцев. Введите суммы на вкладке «Бюджет».</td></tr>';
+  $('s-foot').innerHTML=R.length?'<tr><td>Всего ('+R.length+')</td><td>'+rub(ti)+'</td><td>'+rub(te)+'</td><td>'+rub(tu)+'</td><td>'+(ti-te<0?'−':'')+rub(Math.abs(ti-te))+'</td><td></td></tr>':'';
+  $('s-bars').innerHTML=bars||'<p class="muted small">Нет данных.</p>';
+}
+
+/* ---------- ипотека ---------- */
+function pay(P,r,y){var i=r/1200,n=y*12;return i===0?P/n:P*i/(1-Math.pow(1+i,-n))}
+function renderMortgage(B){
+  var P=num('m_price')*(1-num('m_down')/100),y=num('m_term')||1;
+  var list=[['Дальневосточная ипотека',2],['Семейная ипотека',6],['Своя ставка',num('m_rate')]];
+  var h='';
+  list.forEach(function(x){
+    var m=pay(P,x[1],y);
+    h+='<tr><td>'+x[0]+'</td><td>'+pct(x[1],1)+'</td><td>'+rub(m)+'</td><td>'+rub(m*y*12-P)+'</td><td>'+(B.tot>0?pct(m/B.tot*100,0):'—')+'</td></tr>';
+  });
+  $('m-body').innerHTML=h;
+}
+
+/* ---------- льготы ---------- */
+var JT={"gov_f": "gov", "gov_r": "gov", "gov_m": "gov", "gov_c": "gov", "mil": "mil", "pol": "mil", "sec": "mil", "teach": "edu", "kg": "edu", "prof": "edu", "sci": "edu", "doc": "med", "nurse": "med", "pharm": "med", "medj": "med", "cult": "cult", "sport": "oth", "soc": "oth", "ind": "oth", "build": "oth", "drv": "oth", "rail": "oth", "energy": "oth", "agr": "agr", "forest": "agr", "shop": "oth", "cafe": "oth", "beauty": "oth", "hotel": "oth", "clean": "oth", "it": "oth", "fin": "oth", "law": "oth", "mgr": "oth", "mkt": "oth", "eng": "oth", "ip": "ip", "self": "self", "biz": "oth", "mat": "mat", "home": "home", "unemp": "unemp", "stud": "stud", "pens": "pens", "dis": "oth", "oth": "oth"},JL={"gov_f": "Федеральный государственный служащий", "gov_r": "Госслужащий Республики Бурятия", "gov_m": "Муниципальный служащий", "gov_c": "Работник аппарата суда, прокуратуры, органов власти", "mil": "Военнослужащий по контракту", "pol": "Сотрудник полиции, Росгвардии", "sec": "Сотрудник МЧС, ФСИН, приставов, таможни, СК, спецслужб", "teach": "Учитель школы", "kg": "Воспитатель, педагог детского сада", "prof": "Преподаватель колледжа, вуза, дополнительного образования", "sci": "Научный сотрудник", "doc": "Врач", "nurse": "Медсестра, фельдшер, средний медперсонал", "pharm": "Фармацевт, провизор", "medj": "Младший медперсонал, санитар", "cult": "Работник культуры (библиотека, музей, клуб, театр)", "sport": "Тренер, работник спорта", "soc": "Социальный работник, работник соцзащиты", "ind": "Рабочий на производстве, оператор, слесарь, сварщик", "build": "Строитель, монтажник, отделочник", "drv": "Водитель, курьер, перевозки", "rail": "Железнодорожник, работник авиации и речного транспорта", "energy": "Энергетик, нефтегаз, добыча, геолог", "agr": "Агроном, механизатор, животновод, фермер", "forest": "Лесное хозяйство, егерь, лесник", "shop": "Продавец, кассир, торговля, склад", "cafe": "Повар, официант, бариста, общепит", "beauty": "Парикмахер, мастер красоты, массажист", "hotel": "Гостиницы, туризм, гид", "clean": "Клининг, ЖКХ, охрана, обслуживание", "it": "IT-специалист, разработчик, аналитик", "fin": "Банк, финансы, бухгалтер, экономист", "law": "Юрист, нотариус, адвокат", "mgr": "Менеджер, администратор, секретарь, офис", "mkt": "Маркетинг, реклама, дизайн, журналист, фотограф", "eng": "Инженер, проектировщик, архитектор", "ip": "Индивидуальный предприниматель", "self": "Самозанятый, фрилансер", "biz": "Руководитель, собственник бизнеса", "mat": "В отпуске по уходу за ребёнком", "home": "Домохозяйка, домохозяин", "unemp": "Безработный, ищу работу", "stud": "Студент, учусь очно", "pens": "Пенсионер", "dis": "Человек с инвалидностью, не работаю", "oth": "Другая профессия (укажите ниже)"};
+function yrs(n){if(n===0)return 'до года';var a=n%100,b=n%10;return n+' '+(a>10&&a<15?'лет':b===1?'год':b>1&&b<5?'года':'лет')}
+function prof(){
+  var kids=($('b_kids').value||'').split(/[^0-9]+/).filter(function(x){return x!==''}).map(Number).filter(function(x){return x>=0&&x<18}).sort(function(a,b){return b-a});
+  var fam=$('b_fam').value,jt=JT[$('b_job').value]||'',st=JT[$('b_sjob').value]||'',mar=fam==='m';
+  return {age:num('b_age'),sp:num('b_spage'),fam:fam,married:mar,kids:kids,jt:jt,st:mar?st:'',gov:jt==='gov'||(mar&&st==='gov'),rural:$('b_rur').value==='v',dis:$('b_dis').value==='y'&&kids.length>0,vet:$('b_vet').value==='y',dbl:fam==='mo'||fam==='wd'};
+}
+function renderProfile(){
+  var P=prof(),h='';
+  $('f_spage').hidden=!P.married;$('f_sjob').hidden=!P.married;
+  h+='<span>'+(P.age?'вам '+yrs(P.age):'ваш возраст не указан')+'</span>';
+  h+='<span>'+(P.married?'в браке'+(P.sp?', супругу(е) '+yrs(P.sp):', возраст супруга(и) не указан'):($('b_fam').selectedOptions[0]?$('b_fam').selectedOptions[0].textContent:'без брака'))+'</span>';
+  h+='<span>'+(P.kids.length?'детей: '+P.kids.length+' ('+P.kids.map(yrs).join(', ')+')':'детей нет')+'</span>';
+  h+='<span>Республика Бурятия</span>';
+  var jv=$('b_job').value;if(jv)h+='<span>'+(jv==='oth'&&$('b_jobx').value?esc($('b_jobx').value):esc(JL[jv]))+'</span>';
+  if(P.married&&$('b_sjob').value)h+='<span>супруг(а): '+esc(JL[$('b_sjob').value])+'</span>';
+  if(P.rural)h+='<span>село, посёлок</span>';
+  if(P.kids.length>=3)h+='<span>многодетная семья</span>';
+  $('b-facts').innerHTML=h;
+}
+var flt='all';
+function cards(B,U){
+  var me=num('i_me')/0.87,sp=num('i_sp')/0.87,oth=num('i_oth');
+  var P=prof(),K=P.kids,KC=K.filter(function(a){return a<=16});
+  var gt=me+sp+oth,mem=Math.max(1,P.age?(P.married?2:1)+K.length:num('u_people'));
+  var PM=C.pm_capita,CH=C.pm_child;
+  var out=[];
+
+  // единое пособие
+  (function(){
+    if(!KC.length)return;
+    var pc=gt/mem,s,amt,note;
+    var each=(me*12>=C.mrot8&&(!P.married||sp*12>=C.mrot8));
+    if(pc>=PM){
+      s='later';amt='Вероятно, не положено';
+      note='Доход на человека около '+rub(pc)+' при пороге '+rub(PM)+'. Для семьи из '+mem+' человек порог около '+rub(PM*mem)+' в месяц до НДФЛ.';
+    }else{
+      var k=.5;
+      if((gt+CH*.5)/mem<PM)k=.75;
+      if((gt+CH*.75)/mem<PM)k=1;
+      s='check';amt='Около '+rub(CH*k*KC.length)+' в месяц'+(KC.length>1?' на '+KC.length+' детей':'');
+      note='Доход на человека около '+rub(pc)+', ниже порога '+rub(PM)+'. Размер: '+Math.round(k*100)+'% детского прожиточного минимума ('+rub(CH)+').'+(each?'':' Доход одного из родителей за 12 месяцев ниже 8 МРОТ ('+rub(C.mrot8)+'), без исключений пособие не назначат.')+' Учитывается и имущество семьи.';
+    }
+    out.push({c:['children'],s:s,t:'Единое пособие на ребёнка',a:amt,n:note,h:'Госуслуги, МФЦ или клиентская служба СФР. Размер пересчитывается при изменении дохода.',u:'https://sfr.gov.ru/branches/buryatia/news/~2026/05/15/281245'});
+  })();
+
+  // вычет 1400
+  (function(){
+    if(!K.length)return;
+    var m1=Math.min(12,Math.floor(C.vychet_cap/Math.max(me,1))),m2=Math.min(12,Math.floor(C.vychet_cap/Math.max(sp,1)));
+    var perMonth=K.reduce(function(s,a,i){return s+(i<2?C.vychet_amt:3000)},0)*0.13;
+    var tot=(m1+(P.married?m2:0))*perMonth;
+    out.push({c:['tax','children'],s:'ok',t:'Стандартный вычет на ребёнка',a:'До '+rub(perMonth)+' в месяц с каждого родителя',
+      n:'Вычет '+rub(C.vychet_amt)+' в месяц на первого и второго ребёнка и 3 000 ₽ на третьего и следующих уменьшает налоговую базу. Он действует, пока доход с начала года не превысит '+rub(C.vychet_cap)+'. По вашим доходам это около '+m1+' мес. у вас'+(P.married?' и '+m2+' мес. у супруга(и)':'')+', в сумме примерно '+rub(tot)+' за год. '+(P.married?'Если один родитель откажется, второй получит двойной вычет.':P.dbl?'Единственному родителю вычет положен в двойном размере.':'Двойной вычет положен, только если у ребёнка нет второго родителя (смерть, безвестное отсутствие, прочерк в графе «отец»). После развода вычет предоставляется в обычном размере.'),
+      h:'Заявление и свидетельство о рождении в бухгалтерию по месту работы.',u:'https://www.nalog.gov.ru/rn26/news/smi/16639139/'});
+  })();
+
+  // детсад
+  (function(){
+    if(!K.some(function(a){return a>=1&&a<=7}))return;
+    var fee=num('b_fee');
+    out.push({c:['children'],s:fee>0?'ok':'check',t:'Компенсация части платы за детский сад',a:fee>0?'Около '+rub(fee*0.2)+' в месяц':'Не менее 20% от родительской платы',
+      n:'На первого ребёнка компенсируется не менее 20% среднего размера родительской платы, выплата не зависит от дохода. Точная сумма зависит от региона и посещаемости'+(fee>0?'. Оценка считается от введённой вами платы.':'. Укажите плату в начале вкладки, и сумма посчитается.'),
+      h:'Заявление в детском саду или через МФЦ, выплата приходит на карту.',u:'https://www.nalog.gov.ru/rn26/news/smi/16639139/'});
+    out[out.length-1].u='';
+  })();
+
+  // маткапитал
+  if(K.length)out.push({c:['children','housing'],s:'check',t:'Материнский капитал на первого ребёнка',a:moneyDec(C.matcap1)+' (с 1 февраля 2026)',
+    n:'Сертификат положен, если родился первый ребёнок после 1 января 2020 года, и он индексируется ежегодно. Если сертификат уже оформлен, проверьте остаток в личном кабинете СФР. Средства можно направить на жильё, образование детей, накопительную пенсию мамы.',
+    h:'Госуслуги или СФР. Заявление на сертификат подаётся один раз.',u:'https://www.rbc.ru/rbcfreenews/696a7a3a9a7947fe1b409a34'});
+
+  // выплата при рождении первого
+  if(K.length)out.push({c:['children'],s:(Math.min.apply(null,K)<=1?'check':'later'),t:'Единовременная выплата на первого ребёнка (Бурятия)',a:rub(C.bur_birth1)+' (по данным на '+dfull(C.reviewed)+')',
+    n:'Выплата равна двум детским прожиточным минимумам на год обращения и положена матери при рождении первого ребёнка (2019–2030). '+(Math.min.apply(null,K)<=1?'Если ребёнку нет года, срок обращения ещё не вышел.':'Для детей старше года срок обращения, скорее всего, уже прошёл.')+' Уточните в Минсоцзащиты Бурятии.',
+    h:'Заявление в МФЦ или управление соцзащиты по месту жительства.',u:'https://egov-buryatia.ru/minsoc/include/RUS/posobiya-i-vyplaty/vyplata-na-pervogo-rebenka/'});
+
+  // субсидия ЖКУ
+  (function(){
+    var share=gt>0?B.util/gt*100:0;
+    var thr=gt*0.22;
+    out.push({c:['utilities'],s:share>22?'ok':'later',t:'Субсидия на оплату ЖКУ',a:'Ваши ЖКУ: '+pct(share,1)+' дохода',
+      n:'По обзорам, субсидию назначают, когда расходы на ЖКУ превышают 22% совокупного дохода семьи. Порог для вашего дохода: около '+rub(thr)+' в месяц, сейчас ЖКУ '+rub(B.util)+'. Региональный норматив уточните в соцзащите.',
+      h:'Заявление в МФЦ или через Госуслуги. Субсидия пересчитывается после индексации тарифов.',u:'https://www.klerk.ru/user/2615572/711462/'});
+  })();
+
+  // молодая семья
+  (function(){
+    var s,msg,L=35;
+    if(!P.age||(P.married&&!P.sp)){s='check';msg='Укажите возраст'+(P.married?' свой и супруга(и)':'')+' в начале вкладки.'}
+    else if(P.age<=L&&(!P.married||P.sp<=L)){s='ok';msg='По возрасту подходите: '+(P.married?'обоим':'вам')+' не больше '+L+' лет.'}
+    else{s='later';msg=(P.married?'Вам или супругу(е)':'Вам')+' больше '+L+' лет: условие по возрасту не выполняется.'}
+    if(!P.married&&!K.length){s='later';msg='Программа для семей: пары или одного родителя с ребёнком. '+msg}
+    out.push({c:['housing'],s:s,t:'Субсидия «Молодая семья»',a:'35% расчётной стоимости жилья',
+      n:msg+' Нужны брак, статус нуждающихся в улучшении жилищных условий и доход для платежей по ипотеке. Возраст проверяют дважды: при постановке на учёт и при выдаче субсидии, поэтому подавать заявку лучше сейчас.',
+      h:'Постановка на учёт в администрации по месту жительства.',u:'https://www.gazeta.ru/twz/dengi/programma-molodaya-semya.htm'});
+  })();
+
+  // ДВ ипотека
+  (function(){
+    var s,msg,L=36;
+    if(!P.age||(P.married&&!P.sp)){s='check';msg='Для категории «молодая семья» нужно, чтобы каждому из супругов (или единственному родителю) было не больше 36 лет. Укажите возраст'+(P.married?' свой и супруга(и)':'')+'.'}
+    else if(P.age<=L&&(!P.married||P.sp<=L)){s='ok';msg='Вам '+yrs(P.age)+(P.married?' и супругу(е) '+yrs(P.sp):'')+', по возрасту подходите как молодая семья.'}
+    else{s='later';msg=(P.married?'Вам или супругу(е)':'Вам')+' больше 36 лет, для категории «молодая семья» не подходит. Другие категории смотрите в источнике.'}
+    if(!P.married&&!K.length){s='later';msg='Категория «молодая семья» требует пары или одного родителя с ребёнком. '+msg}
+    out.push({c:['housing'],s:s,t:'Дальневосточная ипотека 2%',a:'Ставка до 2%, взнос от 20%, срок до 20 лет',
+      n:msg+' Лимит кредита 6 или 9 млн ₽ по площади жилья. Покупка возможна в новостройке и в ряде городов на вторичном рынке. Без комплексного страхования ставка может быть выше.',
+      h:'Банки-участники: Сбербанк, ВТБ, ДВ банк и другие. Сравните платёж в расчёте ниже.',u:'https://realty.rbc.ru/news/6937e6e49a79471b13f3caa3'});
+  })();
+
+  // семейная ипотека
+  out.push({c:['housing'],s:(K.some(function(a){return a<=6})?'check':'later'),t:'Семейная ипотека',a:'Ставка 6%, взнос от 20%',
+    n:(K.length&&!K.some(function(a){return a<=6})?'Детям больше 6 лет, по этому условию не подходите. ':'')+'Подходит семья с ребёнком до 6 лет включительно. С 1 февраля 2026 в семье можно иметь только один льготный ипотечный кредит. Обсуждались дифференцированные ставки по числу детей, для семей с одним ребёнком называлась цифра около 10%. Уточните актуальную ставку в банке.',
+    h:'Заявка в банке-участнике, можно использовать материнский капитал как взнос.',u:'https://lenta.ru/articles/2026/06/25/izmeneniya-v-programme-semeynoy-ipoteki-s-1-iyulya-2026-goda/'});
+
+  // налоговые вычеты
+  out.push({c:['tax'],s:'check',t:'Социальные и имущественные вычеты',a:'До 19 500 ₽ в год с расходов, 260 000 ₽ с покупки жилья',
+    n:'Социальный вычет: 13% расходов на лечение и своё обучение в пределах 150 000 ₽ в год (до 19 500 ₽ возврата), на обучение ребёнка в пределах 50 000 ₽ на каждого. Имущественный вычет: 13% стоимости жилья до 2 млн ₽ (до 260 000 ₽) и 13% процентов по ипотеке до 3 млн ₽ (до 390 000 ₽). Подходит, если были такие расходы.',
+    h:'Декларация 3-НДФЛ в личном кабинете налогоплательщика или заявление через работодателя.',u:'https://www.nalog.gov.ru/rn26/news/smi/16639139/'});
+
+  // госслужба
+  if(P.gov)out.push({c:['gov'],s:'check',t:'Меры для государственных служащих',a:'Размеры определяет ваш орган власти',
+    n:'Закон о государственной гражданской службе предусматривает дополнительные оплачиваемые отпуска за выслугу и ненормированный день, единовременную выплату к отпуску и материальную помощь, диспансеризацию. Размеры и порядок зависят от вашего ведомства и региональных актов. Спросите в кадровой службе также про субсидии на жильё для служащих и стаж для пенсии за выслугу лет: наличие и условия я в источниках не подтвердил.',
+    h:'Кадровая служба или бухгалтерия вашего органа.',u:''});
+
+  // участок
+  out.push({c:['housing'],s:'check',t:'Дальневосточный гектар',a:'Участок до 1 га в безвозмездное пользование',
+    n:'Федеральная программа действует и для жителей Бурятии, участок оформляют через платформу «Мой гектар». Подойдёт, если планируете строительство, хозяйство или участок для дома.',
+    h:'Платформа «Мой гектар», заявка через Госуслуги.',u:''});
+
+  // профессия, семейный статус, особые категории
+  (function(){
+    var T=[P.jt,P.married?P.st:''];
+    function who(t){var a=P.jt===t,b=P.married&&P.st===t;return a&&b?'вам и супругу(е)':a?'вам':'супругу(е)'}
+    function has(t){return T.indexOf(t)>=0}
+    function add(t,c,title,amt,note,how){if(has(t))out.push({c:c,s:'check',t:title,a:amt,n:'Относится к '+who(t)+'. '+note+' Условия и размеры я не сверял с источниками, уточните в органе или у работодателя.',h:how,u:''})}
+    add('mil',['housing','gov'],'Военные и силовые структуры: жильё и выслуга','Военная ипотека, выплата на жильё, пенсия за выслугу','У военнослужащих по контракту есть накопительно-ипотечная система (военная ипотека). У сотрудников полиции и ряда силовых ведомств есть единовременная социальная выплата на приобретение жилья и пенсия за выслугу лет. Условия зависят от ведомства и стажа.','Кадровая служба и жилищная комиссия вашего ведомства.');
+    add('edu',['gov','housing'],'Работникам образования','Длительный отпуск, «Земский учитель», льготы сельским педагогам','Педагоги имеют право на длительный отпуск до года после 10 лет непрерывной работы. В селе и малых городах действует программа «Земский учитель» с единовременной выплатой. Для сельских педагогов в регионах обычно есть компенсация коммунальных услуг, в Бурятии уточните порядок. Педагогам засчитывается стаж для досрочной пенсии.','Управление образования, кадры школы, Госуслуги.');
+    add('med',['gov','housing'],'Медицинским работникам','«Земский доктор» и «Земский фельдшер», выплаты, досрочная пенсия','В селе и малых городах действуют программы «Земский доктор» и «Земский фельдшер» с единовременной выплатой. Есть региональные доплаты и стаж для досрочной пенсии по выслуге лет.','Минздрав Республики Бурятия, отдел кадров медицинской организации.');
+    add('cult',['gov'],'Работникам культуры','Льготы сельским работникам культуры','Сельским работникам культуры в регионах предусматривают компенсацию части коммунальных услуг и меры по жилью. Для Бурятии уточните порядок в Министерстве культуры республики.','Министерство культуры Республики Бурятия, ваш работодатель.');
+    add('agr',['housing'],'Сельское хозяйство и лес','Сельская ипотека, гранты фермерам','Для жителей сельских территорий действует сельская ипотека со сниженной ставкой, для фермеров и крестьянских хозяйств есть гранты «Агростартап» и «Семейная ферма».','Минсельхоз Республики Бурятия, банки-участники программы.');
+    add('self',['tax'],'Самозанятым','Налог на профессиональный доход 4% и 6%','Налог на профессиональный доход: 4% с доходов от физлиц и 6% от юрлиц, без взносов и отчётности. Для больничных и пособий можно добровольно вступить в систему страхования Социального фонда. Лимит дохода для этого режима 2,4 млн ₽ в год.','Приложение «Мой налог», Социальный фонд.');
+    add('ip',['tax'],'Индивидуальным предпринимателям','Режимы налогообложения, взносы, налоговые каникулы','Выбор режима (УСН, патент, НПД) решает налоговую нагрузку. Для начинающих ИП в ряде регионов действуют налоговые каникулы, вычеты и меры поддержки малого бизнеса. Взносы ИП платят сами, пособия по беременности и больничные возможны при добровольном вступлении в страхование.','ФНС, центр «Мой бизнес» Республики Бурятия.');
+    add('mat',['children'],'В отпуске по уходу за ребёнком','Пособие по уходу до 1,5 лет','Ежемесячное пособие по уходу за ребёнком до 1,5 лет составляет 40% среднего заработка (есть минимум и максимум). Страховой стаж идёт в отпуск, место работы сохраняется.','Социальный фонд (СФР), работодатель.');
+    add('unemp',['future'],'Безработным','Пособие по безработице, переобучение','Для получения пособия по безработице нужно встать на учёт в центре занятости. Размер зависит от заработка за последние месяцы, срок выплаты ограничен. Бесплатное переобучение, помощь в поиске работы, субсидия на открытие дела.','Центр занятости, портал «Работа России».');
+    add('stud',['future'],'Студентам','Стипендия, общежитие, социальная поддержка','Государственная академическая и социальная стипендия, место в общежитии, льготный проезд в Бурятии.','Деканат, соцзащита, МФЦ.');
+    add('pens',['future'],'Пенсионерам','Индексация пенсии, ЕДВ, региональные льготы','Пенсию индексируют ежегодно, действуют региональные льготы по проезду и ЖКУ для отдельных категорий (ветераны труда и др.). Проверьте право на доплату до прожиточного минимума.','СФР, соцзащита по месту жительства.')
+    if(P.rural&&!P.gov&&!has('agr'))out.push({c:['housing'],s:'check',t:'Для жителей села',a:'Сельская ипотека, участки, «Земский»',n:'Живущим в сельской местности доступна сельская ипотека со сниженной ставкой, для специалистов (врач, учитель, фельдшер) — единовременные выплаты. Условия и размеры я не сверял с источниками, уточните.',h:'Банки-участники, администрация района.',u:''});
+    var fl={d:['В разводе','После развода ребёнок остаётся с вами, второй родитель обязан платить алименты. Если алименты не платят, обратитесь к судебным приставам: взыскание идёт по судебному приказу или решению суда. При расчёте единого пособия алименты входят в доход, но если взыскать их не удаётся, нужны документы о принятых мерах. Двойной стандартный вычет при разводе не положен, он предоставляется в обычном размере.'],
+      mo:['Мать-одиночка','Статус появляется, когда в свидетельстве о рождении у отца прочерк или запись сделана со слов матери. Это даёт двойной стандартный налоговый вычет на ребёнка, в ряде регионов есть дополнительные выплаты и первоочередное право на место в детском саду. Если отец потом установит отцовство, статус теряется.'],
+      fa:['Отец-одиночка','Если мать лишена прав, умерла или не участвует в воспитании, отец вправе получать те же пособия. Нужно подтвердить документами статус (решение суда, свидетельство о смерти). Двойной вычет при этом зависит от причин, уточните в налоговой.'],
+      wd:['Вдова, вдовец','Ребёнок вправе получать пенсию по потере кормильца (страховую или социальную), её оформляет Социальный фонд. Родителю положен двойной стандартный вычет на ребёнка, пока он не вступил в новый брак. Региональные выплаты и льготы уточняйте в соцзащите.'],
+      g:['Опекуны и приёмные семьи','Опекун получает ежемесячные выплаты на содержание ребёнка из региональных средств, приёмным родителям положено вознаграждение. Назначает выплаты орган опеки.']}[P.fam];
+    if(fl&&(K.length||P.fam==='g'))out.push({c:['children'],s:'check',t:fl[0]+': что проверить',a:'Алименты, вычеты, пособия',n:fl[1]+' Условия и размеры я не сверял с источниками, уточните в органе.',h:'Органы опеки, соцзащита по месту жительства, Социальный фонд, налоговая.',u:''});
+    if(K.length>=3)out.push({c:['children','housing'],s:'ok',t:'Многодетная семья: '+K.length+' детей',a:'Выплата на ипотеку 450 000 ₽, вычет, участок',n:'Статус многодетной семьи оформляют в соцзащите. Федеральная выплата 450 000 ₽ на погашение ипотеки действует для многодетных (срок и условия уточните). Вычет на третьего и последующих детей 3 000 ₽ в месяц, ежегодная семейная выплата, региональный материнский капитал в Бурятии на третьего ребёнка. Многодетным в регионах обычно предоставляют бесплатный земельный участок и льготы на проезд, питание в школе и ЖКУ. Условия и размеры я не сверял с источниками, уточните.',h:'Соцзащита по месту жительства, МФЦ, Госуслуги.',u:''});
+    if(P.dis)out.push({c:['children','utilities'],s:'check',t:'Ребёнок с инвалидностью',a:'Социальная пенсия, выплата по уходу, льготы',n:'Ребёнку-инвалиду назначают социальную пенсию. Неработающему родителю или опекуну положена ежемесячная выплата по уходу, а работающим — сокращённый день и дополнительные выходные. Доход семьи при расчёте пособий учитывается иначе. Условия и размеры я не сверял с источниками, уточните.',h:'Социальный фонд, МСЭ, соцзащита.',u:''});
+    if(P.vet)out.push({c:['utilities','tax'],s:'check',t:'Ветеран боевых действий, участник СВО',a:'Компенсация ЖКУ, меры поддержки семьи',n:'Ветеранам боевых действий и участникам СВО положены федеральные меры: компенсация части оплаты ЖКУ, льготы по налогам и жилью, внеочередное право на ряд услуг. Для их семей есть региональные выплаты. Условия и размеры я не сверял с источниками, уточните.',h:'Соцзащита, военкомат, Госуслуги, фонд «Защитники Отечества».',u:''});
+  })();
+
+  // будущее
+  if(K.length<2)out.push({c:['future','children'],s:'later',t:(K.length?'Если появится второй ребёнок':'Если появится первый ребёнок'),a:'Выплаты и вычеты станут больше',
+    n:(K.length?'':'Для семьи с первым ребёнком: единое пособие по доходу, стандартный вычет, материнский капитал, единовременная выплата в Бурятии. ')+'Ежегодная семейная выплата: возврат части уплаченного НДФЛ работающим родителям двух и более детей (заявления с 1 июня до 1 октября через Госуслуги). Вычет на второго ребёнка 2 800 ₽ в месяц. Добавка к маткапиталу: '+rub(C.matcap_2add)+' за второго. Региональный маткапитал в Бурятии '+rub(C.bur_regcap)+' положен на третьего и последующих детей.',
+    h:'СФР, Госуслуги, работодатель.',u:'https://www.03bur.ru/novaia-mera-podderjki-rabotaushie-roditeli-dvyh-i-bolee-detei-imeut-pravo-na-ejegodnyu-semeinyu-vyplaty/'});
+  return out;
+}
+var LBL={ok:'Подходит',check:'Проверьте условия',later:'Пока недоступно'};
+function renderCards(B,U){
+  renderProfile();
+  var list=cards(B,U);
+  var F=[['all','Все'],['ok','Подходит'],['tax','Налоги'],['children','Дети'],['housing','Жильё'],['utilities','ЖКУ'],['gov','Госслужба'],['future','На будущее']];
+  $('flt').innerHTML=F.map(function(f){return '<button type="button" class="pill" data-f="'+f[0]+'" aria-pressed="'+(flt===f[0])+'">'+f[1]+'</button>'}).join('');
+  var shown=list.filter(function(c){
+    if(flt==='all')return true;
+    if(flt==='ok')return c.s==='ok';
+    return c.c.indexOf(flt)>=0;
+  });
+  $('cards').innerHTML=shown.map(function(c){
+    return '<article class="card"><div class="card-h"><h3>'+c.t+'</h3><span class="chip '+c.s+'">'+LBL[c.s]+'</span></div><p class="amt">'+c.a+'</p><p>'+c.n+'</p><p class="how">Как оформить: '+c.h+(c.u?' <a href="'+c.u+'" target="_blank" rel="noopener">Источник</a>':'')+'</p></article>';
+  }).join('')||'<p class="muted">В этой категории пока ничего нет.</p>';
+}
+
+/* ---------- общий пересчёт ---------- */
+function update(){
+  var U=calcU();
+  renderU(U);
+  var B=renderBudget(U);
+  renderMortgage(B);
+  renderCards(B,U);
+  renderSummary();
+  renderSvc();renderCardInfo();
+  var ae=document.activeElement;
+  if(!(ae&&ae.closest&&ae.closest('#pay-list')))renderPays();
+  dailyUpdate();
+  (function(){
+    var T=moTot(CUR,U),c=$('fact-cmp');
+    if(T.fact){var calc=U.tot[T.ep],d=T.util-calc;c.innerHTML='По квитанциям: <b>'+rub(T.util)+'</b>. Расчёт по тарифам: '+rub(calc)+'. Разница: <b class="'+(d>0.5?'warn':'good')+'">'+sgn(d)+'</b>. '+(Math.abs(d)>calc*0.1?'Расхождение заметное: сверьте объёмы потребления в блоке «Мои параметры» со своими счётчиками.':'Расчёт близок к фактическим начислениям.')}
+    else c.textContent='Суммы по квитанциям не введены, в бюджете используется расчёт по тарифам: '+rub(U.tot[T.ep])+'.';
+  })();
+  $('stmt-note').hidden=!(CUR===STMT.month&&IMPD.indexOf(STMT.id)>=0);
+  $('exp-h').textContent='Расходы · '+mname(CUR);
+  $('inc-h').textContent='Доходы · '+mname(CUR)+', на руки';
+  $('u-mnote').textContent='Расход воды, электричества и отопления заполняется отдельно для каждого месяца (сейчас '+mname(CUR)+'). Площадь, число жильцов и ставки общие для всех месяцев.';
+  var ep0=effP(CUR);
+  $('mnote').textContent=sel===3?mname(CUR)+': тарифы периода '+plabel(PERIODS[ep0])+(CUR>PERIODS[1].to.slice(0,7)?'. Тарифы на этот месяц ещё не утверждены, взяты последние действующие.':'.'):mname(CUR)+': тарифы выбраны вручную ('+periodL()[ep0]+').';
+  $('copy-prev').disabled=!prevKey(CUR);
+  document.querySelectorAll('.cprev').forEach(function(b){b.disabled=!prevKey(CUR)});
+  $('selScn').textContent='Сценарий: ещё +'+pct(num('u_scn'),1);
+  var Lb=lab();
+  $('selA').textContent='Тарифы '+Lb.s0;$('selB').textContent='Тарифы '+Lb.s1;
+  $('th0b').textContent=Lb.s0;$('th1b').textContent=Lb.s1;
+  $('t-note').textContent='Значения с НДС по данным РСТ Бурятии. Первая колонка: период '+Lb.s0+', вторая: период '+Lb.s1+'. Электроэнергия: 1 диапазон до 3 900 кВт·ч в месяц, на семью хватает его.';
+  var nOvr=Object.keys(OVR).length;
+  $('t-ovr').textContent=nOvr?'Изменено вручную значений тарифов: '+nOvr+'. Для них автообновление отключено, кнопка «Сбросить мои правки» вернёт данные РСТ.':'Тарифы подставляются автоматически из данных РСТ и обновляются при изменении.';
+  var nt=$('u-notice');if(NOTICE){nt.textContent=NOTICE;nt.hidden=false}else{nt.hidden=true}
+  var age=Math.floor((Date.now()-new Date(C.reviewed+'T00:00:00').getTime())/864e5);
+  var cs=$('c-status');
+  cs.textContent='Размеры выплат и пороги проверены '+dfull(C.reviewed)+(age>120?'. Данные могли устареть, сверьтесь с источниками.':'.');
+  cs.className='small '+(age>120?'warn':'muted');
+  var ds=$('dataStatus');
+  var st={online:'Данные получены из сети, тарифы обновлены '+dfull(DATA_INFO.updated||C.reviewed)+'.',cache:'Нет связи с сервером. Показана сохранённая копия данных от '+dfull(DATA_INFO.updated||C.reviewed)+'.',builtin:'Нет связи с сервером и нет сохранённой копии. Показаны данные, встроенные в приложение, от '+dfull(DATA_INFO.updated||C.reviewed)+'.'}[DATA_INFO.origin];
+  ds.textContent=st;ds.className='small '+(DATA_INFO.origin==='online'?'good':'warn');
+  document.querySelectorAll('[data-sel]').forEach(function(b){b.setAttribute('aria-pressed',String(+b.dataset.sel===sel))});
+}
+
+/* ---------- события ---------- */
+function onEdit(e){
+  var c=e.target.classList;
+  if(!c)return;
+  if(c.contains('p')){
+    if(c.contains('m')){var nt=!(MON[CUR]&&MON[CUR]._t);syncCur();MON[CUR]._t=1;save();if(nt)renderMonths(false);if(e.type==='change'){acct();save()}}else save();
+    update();
+  }
+  if(c.contains('tp')){OVR[e.target.id]=e.target.value;save();update()}
+}
+document.addEventListener('input',onEdit);
+document.addEventListener('change',onEdit);
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button');if(!t)return;
+  if(t.dataset.sel!==undefined){sel=+t.dataset.sel;save();update()}
+  if(t.dataset.f){flt=t.dataset.f;update()}
+  if(t.dataset.cadd){addCat(t.dataset.cadd)}
+  if(t.dataset.cdel){delCat(t)}
+  if(t.dataset.prev){prevOne(t.dataset.prev)}
+  if(t.id==='m-reset'){resetMonth(t)}
+  if(t.dataset.crest){delete HID[t.dataset.crest];catsChanged()}
+  if(t.dataset.m){openMonth(t.dataset.m)}
+  if(t.dataset.save){forceSave()}
+  if(t.dataset.csv){$('csv-file').click()}
+  if(t.dataset.photo){$('photo-file').click()}
+  if(t.dataset.iok){confirmImp()}
+  if(t.dataset.uok){applyUtilPhoto()}
+  if(t.dataset.eirc){$('eirc-file').click()}
+  if(t.dataset.eok){applyEirc()}
+  if(t.dataset.svc){applySvc()}
+  if(t.dataset.ecancel){EIRC=null;renderEirc()}
+  if(t.dataset.icancel){IMP=null;renderImp()}
+  if(t.dataset.padd){
+    var nm=($('pay-new-name').value||'').trim(),dy=$('pay-new-day').value;
+    if(nm){PAYS.push({id:'p'+Date.now().toString(36),name:nm,day:dy,cat:$('pay-new-cat').value});$('pay-new-name').value='';$('pay-new-day').value='';save();renderPays();dailyUpdate()}
+  }
+  if(t.dataset.pdel){PAYS=PAYS.filter(function(x){return x.id!==t.dataset.pdel});save();renderPays();dailyUpdate()}
+  if(t.dataset.exp){exportFile()}
+  if(t.dataset.imp){$('imp-file').click()}
+  if(t.dataset.ent){var ei=t.dataset.ent;OPEN[ei]=!OPEN[ei];renderEnt(ei);if(OPEN[ei]){var ii=$('in_'+ei);if(ii)ii.focus()}}
+  if(t.dataset.add){entAdd(t.dataset.add)}
+  if(t.dataset.del){var dp=t.dataset.del.split(':');entDel(dp[0],+dp[1])}
+  if(t.dataset.clr){entClr(t.dataset.clr)}
+  if(t.dataset.madd){LAST=madd(LAST,1);save();renderMonths(false);var mel=$('months');mel.scrollLeft=mel.scrollWidth}
+  if(t.id==='copy-prev'){
+    var pk=prevKey(CUR);
+    if(pk){Object.keys(MF).forEach(function(id){$(id).value=FACT[id]?'':MON[pk][id]});syncCur();MON[CUR]._t=1;delete MON[CUR].ent;baseMonth(CUR);applyEnt();save();renderMonths(false);update()}
+  }
+  if(t.id==='t-reset'){OVR={};Object.keys(DEF_T).forEach(function(k){$('t_'+k+'_0').value=DEF_T[k][0];$('t_'+k+'_1').value=DEF_T[k][1]});save();update()}
+  if(t.classList.contains('tab')){
+    var map={'tab-b':'p-b','tab-p':'p-p','tab-w':'p-w','tab-u':'p-u','tab-l':'p-l','tab-s':'p-s'};
+    Object.keys(map).forEach(function(id){
+      var on=id===t.id;
+      $(id).setAttribute('aria-selected',String(on));
+      $(map[id]).hidden=!on;
+    });
+  }
+});
+
+function applyData(d,origin){
+  if(d.tariffs)Object.keys(DEF_T).forEach(function(k){var v=d.tariffs[k];if(v&&v.length===2&&isFinite(v[0])&&isFinite(v[1]))DEF_T[k]=v});
+  if(d.periods&&d.periods.length===2&&d.periods[0].from&&d.periods[1].from)PERIODS=d.periods;
+  if(d.constants)Object.keys(d.constants).forEach(function(k){C[k]=d.constants[k]});
+  NOTICE=d.notice||NOTICE;
+  Object.keys(DEF_T).forEach(function(k){[0,1].forEach(function(i){var id='t_'+k+'_'+i;if(OVR[id]===undefined)$(id).value=DEF_T[k][i]})});
+  DATA_INFO={origin:origin,updated:d.updated||C.reviewed};
+}
+function getJson(url){
+  var ctl=window.AbortController?new AbortController():null;
+  var timer=ctl?setTimeout(function(){ctl.abort()},8000):0;
+  return fetch(url+(url.indexOf('?')<0?'?':'&')+'t='+Date.now(),{cache:'no-store',signal:ctl?ctl.signal:undefined}).then(function(r){
+    clearTimeout(timer);
+    if(!r.ok)throw new Error('http '+r.status);
+    return r.json();
+  });
+}
+function loadData(){
+  var urls=[];if(REMOTE)urls.push(REMOTE);urls.push('data.json');
+  var i=0;
+  (function next(){
+    if(i>=urls.length){
+      var cached=null;try{cached=JSON.parse(localStorage.getItem(DKEY)||'null')}catch(x){}
+      if(cached){applyData(cached,'cache')}else{DATA_INFO.origin='builtin'}
+      update();return;
+    }
+    getJson(urls[i++]).then(function(d){
+      if(!d||!d.tariffs)throw new Error('bad data');
+      try{localStorage.setItem(DKEY,JSON.stringify(d))}catch(x){}
+      lastFetch=Date.now();
+      applyData(d,'online');update();
+    }).catch(next);
+  })();
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible'&&Date.now()-lastFetch>3600e3)loadData();
+});
+layInit();
+renderMonths(true);
+update();
+initCloud();
+loadData();
+})();
+</script>
+<script>
+if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
+}
+</script>
+<script>
+(function(){
+var R=document.documentElement,SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>',MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>';
+try{var sv=localStorage.getItem('ud-theme');if(sv==='light'||sv==='dark')R.setAttribute('data-theme',sv)}catch(e){}
+function eff(){var t=R.getAttribute('data-theme');if(t==='light'||t==='dark')return t;return window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}
+function paint(){
+  var b=document.getElementById('theme-btn');if(!b)return;
+  var d=eff()==='dark';b.innerHTML=d?SUN:MOON;
+  b.title=d?'Светлая тема':'Тёмная тема';b.setAttribute('aria-label',b.title);
+  var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',d?'#0B1118':'#DDE5ED');
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest?e.target.closest('#theme-btn'):null;if(!b)return;
+  var nt=eff()==='dark'?'light':'dark';R.setAttribute('data-theme',nt);
+  try{localStorage.setItem('ud-theme',nt)}catch(x){}
+  paint();
+});
+document.addEventListener('pointermove',function(e){
+  var k=e.target.closest?e.target.closest('.kpi'):null;if(!k)return;
+  var r=k.getBoundingClientRect();
+  k.style.setProperty('--mx',Math.round((e.clientX-r.left)/r.width*100)+'%');
+  k.style.setProperty('--my',Math.round((e.clientY-r.top)/r.height*100)+'%');
+});
+paint();
+})();
+</script>
+</body>
+</html>
